@@ -9,16 +9,14 @@ namespace JasonSharp
 	{
 		public static void Main(string[] args)
 		{
-//			var foo = new Test(1, 2);
+//			var foo = new Test(10, 20);
 //			foo.bar(1);
 //			Console.WriteLine(foo.foo);
 //			return;
 			using (var reader = new StreamReader(@"../../examples/foo.mj"))
 			{
 				var node = new Parser(new Scanner(reader)).Parse();
-				var codeGenerator = new CodeGenerator("foo");
-				node.Accept(codeGenerator);
-				codeGenerator.Bake();
+				CodeGenerator.Compile("foo", node);
 			}
 		}
 	}

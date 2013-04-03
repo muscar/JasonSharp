@@ -48,7 +48,12 @@ namespace JasonSharp
 				T info;
 				if (scope.TryGetValue(name, out info))
 				{
-					return info as U;
+					var result = info as U;
+					if (result != null)
+					{
+						return result;
+					}
+					throw new ApplicationException(String.Format("`{0}` is {1}, but it's used as {2}", name, typeof(T).Name, typeof(U).Name));
 				}
 			}
 

@@ -44,6 +44,9 @@
     <Reference Include="foo">
       <HintPath>bin\Debug\foo.dll</HintPath>
     </Reference>
+    <Reference Include="Runtime">
+      <HintPath>..\Runtime\bin\Debug\Runtime.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Backend\CodeGenerator.cs" />

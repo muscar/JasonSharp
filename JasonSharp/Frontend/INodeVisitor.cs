@@ -2,16 +2,16 @@
 
 namespace JasonSharp.Frontend
 {
-	public interface INodeVisitor
+	public interface INodeVisitor<T>
 	{
-		void Visit(AgentDeclarationNode node);
-		void Visit(BeliefDeclarationNode node);
-		void Visit(HandlerDeclarationNode node);
-		void Visit(PlanDeclarationNode node);
-		void Visit(BeliefQueryNode node);
-		void Visit(BeliefUpdateNode node);
-		void Visit(BinaryOpNode node);
-		void Visit(IdentNode node);
-		void Visit(NumberNode node);
+		void Visit(AgentDeclarationNode node, T state);
+		void Visit(BeliefDeclarationNode node, T state);
+		void Visit(HandlerDeclarationNode node, T state);
+		void Visit(PlanDeclarationNode node, T state);
+		void Visit(BeliefQueryNode node, T state);
+		void Visit(BeliefUpdateNode node, T state);
+		void Visit(BinaryOpNode node, T state);
+		void Visit(IdentNode node, T state);
+		void Visit(NumberNode node, T state);
 	}
 }

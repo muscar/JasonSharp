@@ -8,144 +8,165 @@ using JasonSharp.Frontend;
 
 namespace JasonSharp.Backend
 {
-	abstract class SymbolTableEntry
-	{
-		public abstract void EmitLookup(ILGenerator il);
-	}
+    abstract class SymbolTableEntry
+    {
+        public abstract void EmitLookup(ILGenerator il);
+    }
 
-	class ArgumentEntry : SymbolTableEntry
-	{
-		public readonly int Info;
+    class ArgumentEntry : SymbolTableEntry
+    {
+        public readonly int Info;
 		
-		public ArgumentEntry(int info)
-		{
-			this.Info = info;
-		}
+        public ArgumentEntry(int info)
+        {
+            this.Info = info;
+        }
 
-		public override void EmitLookup(ILGenerator il)
-		{
-			switch (Info)
-			{
-			case 0:
-				il.Emit(OpCodes.Ldarg_0);
-				break;
-			case 1:
-				il.Emit(OpCodes.Ldarg_1);
-				break;
-			case 2:
-				il.Emit(OpCodes.Ldarg_2);
-				break;
-			case 3:
-				il.Emit(OpCodes.Ldarg_3);
-				break;
-			default:
-				il.Emit(OpCodes.Ldarg, Info);
-				break;
-			}
-		}
-	}
+        public override void EmitLookup(ILGenerator il)
+        {
+            switch (Info)
+            {
+                case 0:
+                    il.Emit(OpCodes.Ldarg_0);
+                    break;
+                case 1:
+                    il.Emit(OpCodes.Ldarg_1);
+                    break;
+                case 2:
+                    il.Emit(OpCodes.Ldarg_2);
+                    break;
+                case 3:
+                    il.Emit(OpCodes.Ldarg_3);
+                    break;
+                default:
+                    il.Emit(OpCodes.Ldarg, Info);
+                    break;
+            }
+        }
+    }
 
-	class LocalEntry : SymbolTableEntry
-	{
-		public readonly LocalBuilder Info;
+    class LocalEntry : SymbolTableEntry
+    {
+        public readonly LocalBuilder Info;
 
-		public LocalEntry(LocalBuilder info)
-		{
-			this.Info = info;
-		}
+        public LocalEntry(LocalBuilder info)
+        {
+            this.Info = info;
+        }
 
-		public override void EmitLookup(ILGenerator il)
-		{
-			il.Emit(OpCodes.Ldloc, Info);
-		}
-	}
+        public override void EmitLookup(ILGenerator il)
+        {
+            il.Emit(OpCodes.Ldloc, Info);
+        }
+    }
 
-	class FieldEntry : SymbolTableEntry
-	{
-		public readonly FieldBuilder Info;
+    class FieldEntry : SymbolTableEntry
+    {
+        public readonly FieldBuilder Info;
 
-		public FieldEntry(FieldBuilder info)
-		{
-			this.Info = info;
-		}
+        public FieldEntry(FieldBuilder info)
+        {
+            this.Info = info;
+        }
 
-		public override void EmitLookup(ILGenerator il)
-		{
-			il.Emit(OpCodes.Ldarg_0);
-			il.Emit(OpCodes.Ldfld, Info);
-		}
-	}
+        public override void EmitLookup(ILGenerator il)
+        {
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, Info);
+        }
+    }
 
-	class MethodEntry : SymbolTableEntry
-	{
-		public readonly MethodBuilder Info;
+    class MethodEntry : SymbolTableEntry
+    {
+        public readonly MethodBuilder Info;
 
-		public MethodEntry(MethodBuilder info)
-		{
-			this.Info = info;
-		}
+        public MethodEntry(MethodBuilder info)
+        {
+            this.Info = info;
+        }
 
-		public override void EmitLookup(ILGenerator il)
-		{
-			throw new NotImplementedException();
-		}
-	}
+        public override void EmitLookup(ILGenerator il)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
-	class CodeGenerator : INodeVisitor
-	{
-		private readonly AssemblyBuilder assemblyBuilder;
-		private readonly ModuleBuilder moduleBuilder;
-		private TypeBuilder typeBuilder;
+    class CodeGeneratorState
+    {
+        public readonly SymbolTable<SymbolTableEntry> symbolTable = new SymbolTable<SymbolTableEntry>();
 
-		private readonly SymbolTable<SymbolTableEntry> symbolTable = new SymbolTable<SymbolTableEntry>();
+        public readonly AssemblyBuilder assemblyBuilder;
+        public readonly ModuleBuilder moduleBuilder;
+        public TypeBuilder typeBuilder;
+        public MethodBuilder methodBuilder;
+        public ILGenerator il;
 
-		// XXX This is here only for debugging convenience
-		private MethodBuilder methodBuilder;
-		private ILGenerator il;
+        public CodeGeneratorState(AssemblyBuilder assemblyBuilder, ModuleBuilder moduleBuilder)
+        {
+            this.assemblyBuilder = assemblyBuilder;
+            this.moduleBuilder = moduleBuilder;
+        }
 
-		public CodeGenerator(string moduleName)
-		{
-			// create a dynamic assembly and module 
-			var assemblyName = new AssemblyName() { Name = moduleName };
-			assemblyBuilder = Thread.GetDomain().DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Save);
-			moduleBuilder = assemblyBuilder.DefineDynamicModule(moduleName + ".dll");
-		}
+        public FieldBuilder DefineField(string name, Type type, FieldAttributes attributes)
+        {
+            var field = typeBuilder.DefineField(name, type, attributes);
+            symbolTable.Register(name, new FieldEntry(field));
+            return field;
+        }
+    }
 
-		public void Bake()
-		{
-			// bake it
-			typeBuilder.CreateType();
+    class CodeGenerator : INodeVisitor<CodeGeneratorState>
+    {
+        private readonly MethodInfo[] tupleCreateMethods = new MethodInfo[8];
 
-			// set the entry point for the application and save it
-//			assemblyBuilder.SetEntryPoint(methodBuilder, PEFileKinds.Dll);
-			assemblyBuilder.Save(moduleBuilder.ScopeName);
-		}
+        public CodeGenerator()
+        {
+            foreach (var meth in typeof(Tuple).GetMethods())
+            {
+                if (meth.Name == "Create")
+                {
+                    tupleCreateMethods [meth.GetGenericArguments().Length - 1] = meth;
+                }
+            }
+        }
+
+        public static void Compile(string moduleName, Node moduleAst)
+        {
+            var assemblyName = new AssemblyName() { Name = moduleName };
+            var assemblyBuilder = Thread.GetDomain().DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Save);
+            var moduleBuilder = assemblyBuilder.DefineDynamicModule(moduleName + ".dll");
+            var state = new CodeGeneratorState(assemblyBuilder, moduleBuilder);
+            var cg = new CodeGenerator();
+            moduleAst.Accept(cg, state);
+            // Bake it
+            state.typeBuilder.CreateType();
+            state.assemblyBuilder.Save(moduleBuilder.ScopeName);
+        }
 
         #region INodeVisitor Members
 
-		public void Visit(AgentDeclarationNode node)
-		{
-			// create a new type to hold our Main method
-			typeBuilder = moduleBuilder.DefineType(node.Name, TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.BeforeFieldInit);
+        public void Visit(AgentDeclarationNode node, CodeGeneratorState state)
+        {
+            // create a new type to hold our Main method
+            state.typeBuilder = state.moduleBuilder.DefineType(node.Name, TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.BeforeFieldInit);
 
-			var ctorBuilder = typeBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig, CallingConventions.HasThis, node.Args.Select(arg => typeof(int)).ToArray());
-			il = ctorBuilder.GetILGenerator();
+            // Agent scope
+            state.symbolTable.Enter();
 
-			// Agent scope
-			symbolTable.Enter();
+            foreach (var b in node.BeliefDeclarations)
+            {
+                b.Accept(this, state);
+            }
 
-			foreach (var b in node.BeliefDeclarations)
-			{
-				var field = typeBuilder.DefineField(b.Name, MakeTupleType(b.Args), FieldAttributes.Public);
-				symbolTable.Register(b.Name, new FieldEntry(field));
-			}
+            var ctorBuilder = state.typeBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig, CallingConventions.HasThis, node.Args.Select(arg => typeof(int)).ToArray());
+            state.il = ctorBuilder.GetILGenerator();
+			
+            EmitCtor(state, node.Args, node.BeliefDeclarations);
 
-			EmitCtor(node.Args, node.BeliefDeclarations);
-
-			foreach (var n in node.Body)
-			{
-				n.Accept(this);
-			}
+            foreach (var n in node.Body)
+            {
+                n.Accept(this, state);
+            }
 
 //			// create the Main(string[] args) method
 //			methodBuilder = typeBuilder.DefineMethod("Main", MethodAttributes.HideBySig | MethodAttributes.Static | MethodAttributes.Public, typeof(void), new Type[] { typeof(string[]) });
@@ -155,144 +176,143 @@ namespace JasonSharp.Backend
 //
 //			il.Emit(OpCodes.Ret);
 
-			symbolTable.Exit();
-		}
+            state.symbolTable.Exit();
+        }
 
-		private void EmitCtor(IList<Tuple<string, string>> args, IList<BeliefDeclarationNode> beliefDeclarations)
-		{
-			symbolTable.Enter();
+        private void EmitCtor(CodeGeneratorState state, IList<Tuple<string, string>> args, IList<BeliefDeclarationNode> beliefDeclarations)
+        {
+            state.symbolTable.Enter();
 			
-			for (int i = 0; i < args.Count; i++)
-			{
-				symbolTable.Register(args[i].Item1, new ArgumentEntry(i + 1));
-			}
+            for (int i = 0; i < args.Count; i++)
+            {
+                state.symbolTable.Register(args [i].Item1, new ArgumentEntry(i + 1));
+            }
 
-			il.Emit(OpCodes.Ldarg_0);
-			il.Emit(OpCodes.Call, typeof(object).GetConstructor(Type.EmptyTypes));
+            state.il.Emit(OpCodes.Ldarg_0);
+            state.il.Emit(OpCodes.Call, typeof(object).GetConstructor(Type.EmptyTypes));
 			
-			foreach (var b in beliefDeclarations)
-			{
-				var field = symbolTable.Lookup<FieldEntry>(b.Name);
-				if (field != null)
-				{
-					il.Emit(OpCodes.Ldarg_0);
-					EmitTupleCreate(field.GetType(), b.Args);
-					il.Emit(OpCodes.Stfld, field.Info);
-				}
-			}
+            foreach (var b in beliefDeclarations)
+            {
+                var field = state.symbolTable.Lookup<FieldEntry>(b.Name);
+                if (field != null)
+                {
+                    state.il.Emit(OpCodes.Ldarg_0);
+                    EmitTupleCreate(state, field.GetType(), b.Args);
+                    state.il.Emit(OpCodes.Stfld, field.Info);
+                }
+            }
 			
-			il.Emit(OpCodes.Ret);
+            state.il.Emit(OpCodes.Ret);
 			
-			symbolTable.Exit();
-		}
+            state.symbolTable.Exit();
+        }
 
-		private Type MakeTupleType(IList<Node> args)
-		{
-			var tupleOf = Type.GetType("System.Tuple`" + args.Count);
-			var genericTypeOf = tupleOf.MakeGenericType(args.Select(a => typeof(int)).ToArray());
-			return genericTypeOf;
-		}
+        private Type MakeTupleType(IList<Node> args)
+        {
+            var tupleOf = Type.GetType("System.Tuple`" + args.Count);
+            var genericTypeOf = tupleOf.MakeGenericType(args.Select(a => typeof(int)).ToArray());
+            return genericTypeOf;
+        }
 
-		private void EmitTupleCreate(Type genericTupleOf, IList<Node> args)
-		{
-			foreach (var meth in typeof(Tuple).GetMethods())
-			{
-				if (meth.Name == "Create" && meth.GetGenericArguments().Length == args.Count)
-				{
-					foreach (var arg in args)
-					{
-						arg.Accept(this);
-					}
+        private void EmitTupleCreate(CodeGeneratorState state, Type genericTupleOf, IList<Node> args)
+        {
+            if (args.Count >= tupleCreateMethods.Length)
+            {
+                throw new ApplicationException(String.Format("Can't have more than {0} arguments. Yeah, it sucks, I know.", tupleCreateMethods.Length));
+            }
 
-					var createMeth = meth.MakeGenericMethod(args.Select(a => typeof(int)).ToArray());
-					
-					il.Emit(OpCodes.Call, createMeth);
-					return;
-				}
-			}
-		}
+            var meth = tupleCreateMethods [args.Count - 1];
+            var createMeth = meth.MakeGenericMethod(args.Select(a => typeof(int)).ToArray());
 
-		public void Visit(BeliefDeclarationNode node)
-		{
-			throw new NotImplementedException();
-		}
+            foreach (var arg in args)
+            {
+                arg.Accept(this, state);
+            }
 
-		public void Visit(HandlerDeclarationNode node)
-		{
-			throw new NotImplementedException();
-		}
+            state.il.Emit(OpCodes.Call, createMeth);
+        }
 
-		public void Visit(PlanDeclarationNode node)
-		{
-			methodBuilder = typeBuilder.DefineMethod(node.Name, MethodAttributes.Public | MethodAttributes.HideBySig, typeof(void), node.Args.Select(a => typeof(int)).ToArray());
-			il = methodBuilder.GetILGenerator();
+        public void Visit(BeliefDeclarationNode node, CodeGeneratorState state)
+        {
+            state.DefineField(node.Name, MakeTupleType(node.Args), FieldAttributes.Public);
+        }
 
-			symbolTable.Enter();
+        public void Visit(HandlerDeclarationNode node, CodeGeneratorState state)
+        {
+            throw new NotImplementedException();
+        }
 
-			var args = node.Args;
-			for (int i = 0; i < args.Count; i++)
-			{
-				symbolTable.Register(args[i].Item1, new ArgumentEntry(i + 1));
-			}
+        public void Visit(PlanDeclarationNode node, CodeGeneratorState state)
+        {
+            state.methodBuilder = state.typeBuilder.DefineMethod(node.Name, MethodAttributes.Public | MethodAttributes.HideBySig, typeof(void), node.Args.Select(a => typeof(int)).ToArray());
+            state.il = state.methodBuilder.GetILGenerator();
 
-			foreach (var n in node.Body)
-			{
-				n.Accept(this);
-			}
+            state.symbolTable.Enter();
 
-			il.Emit(OpCodes.Ret);
+            var args = node.Args;
+            for (int i = 0; i < args.Count; i++)
+            {
+                state.symbolTable.Register(args [i].Item1, new ArgumentEntry(i + 1));
+            }
+
+            foreach (var n in node.Body)
+            {
+                n.Accept(this, state);
+            }
+
+            state.il.Emit(OpCodes.Ret);
 			
-			symbolTable.Exit();
+            state.symbolTable.Exit();
 
-			symbolTable.Register(node.Name, new MethodEntry(methodBuilder));
-		}
+            state.symbolTable.Register(node.Name, new MethodEntry(state.methodBuilder));
+        }
 
-		public void Visit(BeliefQueryNode node)
-		{
-			var field = symbolTable.Lookup<FieldEntry>(node.Name);
-			var args = node.Args;
-			var genericTupleOf = MakeTupleType(args);
+        public void Visit(BeliefQueryNode node, CodeGeneratorState state)
+        {
+            var field = state.symbolTable.Lookup<FieldEntry>(node.Name);
+            var args = node.Args;
+            var genericTupleOf = MakeTupleType(args);
 
-			for (int i = 0; i < args.Count; i++)
-			{
-				var local = il.DeclareLocal(typeof(int));
-				symbolTable.Register((args[i] as IdentNode).Name, new LocalEntry(local));
-				il.Emit(OpCodes.Ldarg_0);
-				il.Emit(OpCodes.Ldfld, field.Info);
-				il.Emit(OpCodes.Call, genericTupleOf.GetMethod("get_Item" + (i + 1)));
-				il.Emit(OpCodes.Stloc, local);
-			}
-		}
+            for (int i = 0; i < args.Count; i++)
+            {
+                var local = state.il.DeclareLocal(typeof(int));
+                state.symbolTable.Register((args [i] as IdentNode).Name, new LocalEntry(local));
+                state.il.Emit(OpCodes.Ldarg_0);
+                state.il.Emit(OpCodes.Ldfld, field.Info);
+                state.il.Emit(OpCodes.Call, genericTupleOf.GetMethod("get_Item" + (i + 1)));
+                state.il.Emit(OpCodes.Stloc, local);
+            }
+        }
 
-		public void Visit(BeliefUpdateNode node)
-		{
-			var field = symbolTable.Lookup<FieldEntry>(node.Name);
-			if (field != null)
-			{
-				il.Emit(OpCodes.Ldarg_0);
-				EmitTupleCreate(field.GetType(), node.Args);
-				il.Emit(OpCodes.Stfld, field.Info);
-			}
-		}
+        public void Visit(BeliefUpdateNode node, CodeGeneratorState state)
+        {
+            var field = state.symbolTable.Lookup<FieldEntry>(node.Name);
+            if (field != null)
+            {
+                state.il.Emit(OpCodes.Ldarg_0);
+                EmitTupleCreate(state, field.GetType(), node.Args);
+                state.il.Emit(OpCodes.Stfld, field.Info);
+            }
+        }
 
-		public void Visit(BinaryOpNode node)
-		{
-			node.Left.Accept(this);
-			node.Right.Accept(this);
-			il.Emit(OpCodes.Add); // XXX
-		}
+        public void Visit(BinaryOpNode node, CodeGeneratorState state)
+        {
+            node.Left.Accept(this, state);
+            node.Right.Accept(this, state);
+            state.il.Emit(OpCodes.Add); // XXX
+        }
 
-		public void Visit(IdentNode node)
-		{
-			var info = symbolTable.Lookup(node.Name);
-			info.EmitLookup(il);
-		}
+        public void Visit(IdentNode node, CodeGeneratorState state)
+        {
+            var info = state.symbolTable.Lookup(node.Name);
+            info.EmitLookup(state.il);
+        }
 
-		public void Visit(NumberNode node)
-		{
-			il.Emit(OpCodes.Ldc_I4, node.Value);
-		}
+        public void Visit(NumberNode node, CodeGeneratorState state)
+        {
+            state.il.Emit(OpCodes.Ldc_I4, node.Value);
+        }
 
         #endregion
-	}
+    }
 }
