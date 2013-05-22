@@ -55,10 +55,15 @@
     <Compile Include="Frontend\Parser.cs" />
     <Compile Include="Frontend\Scanner.cs" />
     <Compile Include="Frontend\Syntax.cs" />
-    <Compile Include="Frontend\TextReaderExtensions.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils\SymbolTable.cs" />
+    <Compile Include="Frontend\SourceLocation.cs" />
+    <Compile Include="Frontend\SourceSpan.cs" />
+    <Compile Include="Frontend\SourceStringReader.cs" />
+    <Compile Include="Frontend\SourceStreamReader.cs" />
+    <Compile Include="Frontend\ISourceReader.cs" />
+    <Compile Include="Frontend\ISourceReaderExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -4,9 +4,9 @@ using System.Text;
 
 namespace JasonSharp.Frontend
 {
-    public static class TextReaderExtensions
+    public static class ISourceReaderExtensions
     {
-        public static string ReadWhile(this TextReader r, Predicate<char> pred)
+        public static string ReadWhile(this ISourceReader r, Predicate<char> pred)
         {
             var sb = new StringBuilder();
             var c = r.Peek();

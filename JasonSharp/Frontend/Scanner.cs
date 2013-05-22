@@ -26,15 +26,17 @@ namespace JasonSharp.Frontend
         RBracket,
         LCurly,
         RCurly,
+
         Comma,
         Period,
         Semicolon,
         Colon,
         QMark,
         EMark,
+
         Unknown,
         Eof
-    }    
+    }
     
     public class Token
     {
@@ -43,12 +45,10 @@ namespace JasonSharp.Frontend
         public static readonly Token KwOn = new Token(TokenKind.KwOn, "on");
         public static readonly Token KwPlan = new Token(TokenKind.KwPlan, "plan");
         public static readonly Token KwProto = new Token(TokenKind.KwProto, "proto");
-
         public static readonly Token Plus = new Token(TokenKind.Plus, "+");
         public static readonly Token Minus = new Token(TokenKind.Minus, "-");
         public static readonly Token Mul = new Token(TokenKind.Mul, "*");
         public static readonly Token Div = new Token(TokenKind.Div, "/");
-
         public static readonly Token LParen = new Token(TokenKind.LParen, "(");
         public static readonly Token RParen = new Token(TokenKind.RParen, ")");
         public static readonly Token LBracket = new Token(TokenKind.LBracket, "[");
@@ -62,7 +62,7 @@ namespace JasonSharp.Frontend
         public static readonly Token QMark = new Token(TokenKind.QMark, "?");
         public static readonly Token EMark = new Token(TokenKind.EMark, "!");
         public static readonly Token Eof = new Token(TokenKind.Eof, "end of file");
-        
+
         public readonly TokenKind Kind;
         public readonly string Contents;
         
@@ -80,8 +80,7 @@ namespace JasonSharp.Frontend
 
     public class Scanner
     {
-        private readonly TextReader reader;
-        
+        private readonly ISourceReader reader;
         private readonly Dictionary<string, Token> keywords = new Dictionary<string, Token>()
         {
             { "agent", Token.KwAgent },
@@ -90,8 +89,14 @@ namespace JasonSharp.Frontend
             { "plan", Token.KwPlan },
             { "proto", Token.KwProto }
         };
-    
-        public Scanner(TextReader reader)
+
+        public SourceLocation Location
+        {
+            get { return reader.Location; }
+            private set { }
+        }
+
+        public Scanner(ISourceReader reader)
         {
             this.reader = reader;
         }
@@ -101,7 +106,7 @@ namespace JasonSharp.Frontend
             while (true)
             {
                 reader.ReadWhile(Char.IsWhiteSpace);
-                var c = (char) reader.Peek();
+                var c = (char)reader.Peek();
                 switch (c)
                 {
                     case '+':
