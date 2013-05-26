@@ -16,7 +16,7 @@ namespace JasonSharp
 
             var reader = new SourceReader(new StreamReader(@"../../examples/foo.mj"));
 			var node = new Parser(new Scanner(reader)).Parse();
-			CodeGenerator.Compile("foo", node);
+            new CodeGenerator("foo").Compile(node);
 		}
 	}
 }

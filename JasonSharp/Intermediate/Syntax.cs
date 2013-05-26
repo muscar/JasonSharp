@@ -7,7 +7,7 @@ namespace JasonSharp.Intermediate
 {
 	public abstract class Node : INode
 	{
-		public abstract void Accept<T>(INodeVisitor<T> visitor, T state);
+		public abstract void Accept(INodeVisitor visitor);
 	}
 
 	public class AgentDeclarationNode : Node
@@ -54,9 +54,9 @@ namespace JasonSharp.Intermediate
 			}
 		}
 
-		public override void Accept<T>(INodeVisitor<T> visitor, T state)
+		public override void Accept(INodeVisitor visitor)
 		{
-			visitor.Visit(this, state);
+			visitor.Visit(this);
 		}
 	}
     
@@ -77,9 +77,9 @@ namespace JasonSharp.Intermediate
 			this.args = new ReadOnlyCollection<Node>(args);
 		}
 
-		public override void Accept<T>(INodeVisitor<T> visitor, T state)
+		public override void Accept(INodeVisitor visitor)
 		{
-			visitor.Visit(this, state);
+			visitor.Visit(this);
 		}
 	}
     
@@ -99,9 +99,9 @@ namespace JasonSharp.Intermediate
 			this.body = new ReadOnlyCollection<Node>(body);
 		}
 
-		public override void Accept<T>(INodeVisitor<T> visitor, T state)
+		public override void Accept(INodeVisitor visitor)
 		{
-			visitor.Visit(this, state);
+			visitor.Visit(this);
 		}
 	}
 
@@ -128,9 +128,9 @@ namespace JasonSharp.Intermediate
 			this.body = new ReadOnlyCollection<Node>(body);
 		}
 
-		public override void Accept<T>(INodeVisitor<T> visitor, T state)
+		public override void Accept(INodeVisitor visitor)
 		{
-			visitor.Visit(this, state);
+			visitor.Visit(this);
 		}
 	}
 
@@ -150,9 +150,9 @@ namespace JasonSharp.Intermediate
 			this.args = new ReadOnlyCollection<Node>(args);
 		}
 
-		public override void Accept<T>(INodeVisitor<T> visitor, T state)
+		public override void Accept(INodeVisitor visitor)
 		{
-			visitor.Visit(this, state);
+			visitor.Visit(this);
 		}
 	}
 
@@ -172,9 +172,9 @@ namespace JasonSharp.Intermediate
 			this.args = new ReadOnlyCollection<Node>(args);
 		}
 
-		public override void Accept<T>(INodeVisitor<T> visitor, T state)
+		public override void Accept(INodeVisitor visitor)
 		{
-			visitor.Visit(this, state);
+			visitor.Visit(this);
 		}
 	}
 
@@ -191,9 +191,9 @@ namespace JasonSharp.Intermediate
 			this.Right = right;
 		}
 
-		public override void Accept<T>(INodeVisitor<T> visitor, T state)
+		public override void Accept(INodeVisitor visitor)
 		{
-			visitor.Visit(this, state);
+			visitor.Visit(this);
 		}
 	}
 
@@ -206,9 +206,9 @@ namespace JasonSharp.Intermediate
 			this.Name = name;
 		}
 
-		public override void Accept<T>(INodeVisitor<T> visitor, T state)
+		public override void Accept(INodeVisitor visitor)
 		{
-			visitor.Visit(this, state);
+			visitor.Visit(this);
 		}
 	}
 
@@ -221,9 +221,9 @@ namespace JasonSharp.Intermediate
 			this.Value = Int32.Parse(value);
 		}
 
-		public override void Accept<T>(INodeVisitor<T> visitor, T state)
+		public override void Accept(INodeVisitor visitor)
 		{
-			visitor.Visit(this, state);
+			visitor.Visit(this);
 		}
 	}
 }
