@@ -62,6 +62,7 @@
     <Compile Include="Text\TextLocation.cs" />
     <Compile Include="Frontend\SourceReader.cs" />
     <Compile Include="Intermediate\PlanActionType.cs" />
+    <Compile Include="Backend\TupleUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

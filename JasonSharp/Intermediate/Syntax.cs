@@ -18,12 +18,12 @@ namespace JasonSharp.Intermediate
 			get { return args; }
 		}
 
-		public ICollection<BeliefDeclarationNode> BeliefDeclarations
+		public IEnumerable<BeliefDeclarationNode> BeliefDeclarations
 		{
 			get { return beliefDeclarations; }
 		}
         
-		public ICollection<INode> Body
+		public IEnumerable<INode> Body
 		{
 			get { return body; }
 		}
@@ -61,7 +61,7 @@ namespace JasonSharp.Intermediate
 
 		public readonly string Name;
 
-		public ICollection<INode> Args
+		public IEnumerable<INode> Args
 		{
 			get { return args; }
 		}

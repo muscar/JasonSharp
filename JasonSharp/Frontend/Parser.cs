@@ -158,19 +158,19 @@ namespace JasonSharp.Frontend
                 case TokenKind.QMark:
                 {
                     Expect(Token.QMark);
-                    var term = ParseTerm(); 
+                    var term = ParseCompoundTerm(); 
                     return new BeliefQueryNode(term.Item1, term.Item2);
                 }
                 case TokenKind.Plus:
                 {
                     Expect(Token.Plus);
-                    var term = ParseTerm(); 
+                    var term = ParseCompoundTerm(); 
                     return new BeliefUpdateNode(term.Item1, term.Item2);
                 }
                 case TokenKind.EMark:
                 {
                     Expect(Token.EMark);
-                    var term = ParseTerm(); 
+                    var term = ParseCompoundTerm(); 
                     return new PlanInvocationNode(term.Item1, term.Item2);
                 }
                 default:
@@ -178,7 +178,7 @@ namespace JasonSharp.Frontend
 			}
 		}
 
-        private Tuple<string, List<INode>> ParseTerm()
+        private Tuple<string, List<INode>> ParseCompoundTerm()
         {
             var name = Expect(new Token(TokenKind.Ident, "")); // XXX
             var args = new List<INode>();
@@ -191,14 +191,26 @@ namespace JasonSharp.Frontend
             return Tuple.Create(name.Contents, args);
         }
 
-		private INode ParseExpression()
+        private INode ParseExpression()
+        {
+            var exp = ParseTerm();
+            while (tokens.Current.Kind == TokenKind.Plus || tokens.Current.Kind == TokenKind.Minus)
+            {
+                var op = tokens.Current.Contents;
+                tokens.MoveNext();
+                exp = new BinaryOpNode(op, exp, ParseExpression());
+            }
+            return exp;
+        }
+
+        private INode ParseTerm()
 		{
 			var exp = ParseAtom();
-			while (tokens.Current.Kind == TokenKind.Plus || tokens.Current.Kind == TokenKind.Minus)
+			while (tokens.Current.Kind == TokenKind.Mul || tokens.Current.Kind == TokenKind.Div)
 			{
 				var op = tokens.Current.Contents;
 				tokens.MoveNext();
-				exp = new BinaryOpNode(op, exp, ParseExpression());
+				exp = new BinaryOpNode(op, exp, ParseTerm());
 			}
 			return exp;
 		}

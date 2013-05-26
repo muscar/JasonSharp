@@ -4,7 +4,9 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
+
 using JasonSharp.Intermediate;
+using JasonSharp.Backend;
 
 namespace JasonSharp.Backend
 {
@@ -105,15 +107,7 @@ namespace JasonSharp.Backend
 
         public CodeGenerator(string moduleName)
         {
-            foreach (var meth in typeof(Tuple).GetMethods())
-            {
-                if (meth.Name == "Create")
-                {
-                    tupleCreateMethods[meth.GetGenericArguments().Length - 1] = meth;
-                }
-            }
-
-            var assemblyName = new AssemblyName() { Name = moduleName };
+            var assemblyName = new AssemblyName { Name = moduleName };
             assemblyBuilder = Thread.GetDomain().DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Save);
             moduleBuilder = assemblyBuilder.DefineDynamicModule(moduleName + ".dll");
         }
@@ -126,11 +120,41 @@ namespace JasonSharp.Backend
             assemblyBuilder.Save(moduleBuilder.ScopeName);
         }
 
-        public FieldBuilder DefineField(string name, Type type, FieldAttributes attributes)
+        private void EmitCtor(IList<Tuple<string, string>> args, IEnumerable<BeliefDeclarationNode> beliefDeclarations)
         {
-            var field = typeBuilder.DefineField(name, type, attributes);
-            symbolTable.Register(name, new FieldEntry(field));
-            return field;
+            symbolTable.Enter();
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                symbolTable.Register(args[i].Item1, new ArgumentEntry(i + 1));
+            }
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Call, typeof(object).GetConstructor(Type.EmptyTypes));
+
+            foreach (var belief in beliefDeclarations)
+            {
+                EmitBeliefUpdate(belief.Name, belief.Args);
+            }
+
+            il.Emit(OpCodes.Ret);
+
+            symbolTable.Exit();
+        }
+
+        void EmitBeliefUpdate(string name, IEnumerable<INode> args)
+        {
+            var field = symbolTable.Lookup<FieldEntry>(name);
+            if (field != null)
+            {
+                il.Emit(OpCodes.Ldarg_0);
+                foreach (var arg in args)
+                {
+                    arg.Accept(this);
+                }
+                il.EmitTupleCreate(args.Select(a => typeof(int)).ToArray());
+                il.Emit(OpCodes.Stfld, field.Info);
+            }
         }
 
         #region INodeVisitor Members
@@ -168,62 +192,11 @@ namespace JasonSharp.Backend
             symbolTable.Exit();
         }
 
-        private void EmitCtor(IList<Tuple<string, string>> args, ICollection<BeliefDeclarationNode> beliefDeclarations)
-        {
-            symbolTable.Enter();
-			
-            for (int i = 0; i < args.Count; i++)
-            {
-                symbolTable.Register(args [i].Item1, new ArgumentEntry(i + 1));
-            }
-
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Call, typeof(object).GetConstructor(Type.EmptyTypes));
-			
-            foreach (var b in beliefDeclarations)
-            {
-                var field = symbolTable.Lookup<FieldEntry>(b.Name);
-                if (field != null)
-                {
-                    il.Emit(OpCodes.Ldarg_0);
-                    EmitTupleCreate(field.GetType(), b.Args);
-                    il.Emit(OpCodes.Stfld, field.Info);
-                }
-            }
-			
-            il.Emit(OpCodes.Ret);
-			
-            symbolTable.Exit();
-        }
-
-        private Type MakeTupleType(ICollection<INode> args)
-        {
-            var tupleOf = Type.GetType("System.Tuple`" + args.Count);
-            var genericTypeOf = tupleOf.MakeGenericType(args.Select(a => typeof(int)).ToArray());
-            return genericTypeOf;
-        }
-
-        private void EmitTupleCreate(Type genericTupleOf, ICollection<INode> args)
-        {
-            if (args.Count >= tupleCreateMethods.Length)
-            {
-                throw new ApplicationException(String.Format("Can't have more than {0} arguments. Yeah, it sucks, I know.", tupleCreateMethods.Length));
-            }
-
-            var meth = tupleCreateMethods [args.Count - 1];
-            var createMeth = meth.MakeGenericMethod(args.Select(a => typeof(int)).ToArray());
-
-            foreach (var arg in args)
-            {
-                arg.Accept(this);
-            }
-
-            il.Emit(OpCodes.Call, createMeth);
-        }
-
         public void Visit(BeliefDeclarationNode node)
         {
-            DefineField(node.Name, MakeTupleType(node.Args), FieldAttributes.Public);
+            var argTypes = node.Args.Select(a => typeof(int)).ToArray();
+            var field = typeBuilder.DefineField(node.Name, TupleUtils.MakeTupleType(argTypes), FieldAttributes.Public);
+            symbolTable.Register(node.Name, new FieldEntry(field));
         }
 
         public void Visit(HandlerDeclarationNode node)
@@ -233,7 +206,8 @@ namespace JasonSharp.Backend
 
         public void Visit(PlanDeclarationNode node)
         {
-            methodBuilder = typeBuilder.DefineMethod(node.Name, MethodAttributes.Public | MethodAttributes.HideBySig, typeof(void), node.Args.Select(a => typeof(int)).ToArray());
+            var argTypes = node.Args.Select(a => typeof(int)).ToArray();
+            methodBuilder = typeBuilder.DefineMethod(node.Name, MethodAttributes.Public | MethodAttributes.HideBySig, typeof(void), argTypes);
             il = methodBuilder.GetILGenerator();
 
             symbolTable.Enter();
@@ -271,7 +245,7 @@ namespace JasonSharp.Backend
         {
             var field = symbolTable.Lookup<FieldEntry>(node.Name);
             var args = node.Args;
-            var genericTupleOf = MakeTupleType(args);
+            var argTypes = args.Select(a => typeof(int)).ToArray();
 
             for (int i = 0; i < args.Count; i++)
             {
@@ -279,27 +253,37 @@ namespace JasonSharp.Backend
                 symbolTable.Register((args[i] as IdentNode).Name, new LocalEntry(local));
                 il.Emit(OpCodes.Ldarg_0);
                 il.Emit(OpCodes.Ldfld, field.Info);
-                il.Emit(OpCodes.Call, genericTupleOf.GetMethod("get_Item" + (i + 1)));
+                il.EmitTupleGetItem(argTypes, i);
                 il.Emit(OpCodes.Stloc, local);
             }
         }
 
         public void Visit(BeliefUpdateNode node)
         {
-            var field = symbolTable.Lookup<FieldEntry>(node.Name);
-            if (field != null)
-            {
-                il.Emit(OpCodes.Ldarg_0);
-                EmitTupleCreate(field.GetType(), node.Args);
-                il.Emit(OpCodes.Stfld, field.Info);
-            }
+            EmitBeliefUpdate(node.Name, node.Args);
         }
 
         public void Visit(BinaryOpNode node)
         {
             node.Left.Accept(this);
             node.Right.Accept(this);
-            il.Emit(OpCodes.Add); // XXX
+            switch (node.Operator)
+            {
+                case "+":
+                    il.Emit(OpCodes.Add);
+                    break;
+                case "-":
+                    il.Emit(OpCodes.Sub);
+                    break;
+                case "*":
+                    il.Emit(OpCodes.Mul);
+                    break;
+                case "/":
+                    il.Emit(OpCodes.Div);
+                    break;
+                default:
+                    throw new ApplicationException(String.Format("Unknown operator {0}", node.Operator));
+            }
         }
 
         public void Visit(IdentNode node)
