@@ -40,8 +40,7 @@ namespace JasonSharp
 
         public override string ToString()
         {
-            return string.Format("{1} - {2}", Start, End);
+            return String.Format("{0} - {1}", Start, End);
         }
     }
 }
-

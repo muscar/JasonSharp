@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-namespace JasonSharp.Frontend
+namespace JasonSharp.Intermediate
 {
 	public abstract class Node : INode
 	{

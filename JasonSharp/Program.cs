@@ -13,6 +13,7 @@ namespace JasonSharp
 //			foo.bar(1);
 //			Console.WriteLine(foo.foo);
 //			return;
+
 			using (var reader = new SourceStreamReader(@"../../examples/foo.mj"))
 			{
 				var node = new Parser(new Scanner(reader)).Parse();

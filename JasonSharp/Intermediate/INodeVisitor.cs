@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace JasonSharp.Frontend
+namespace JasonSharp.Intermediate
 {
 	public interface INodeVisitor<T>
 	{

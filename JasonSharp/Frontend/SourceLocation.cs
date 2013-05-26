@@ -41,8 +41,7 @@ namespace JasonSharp
 
         public override string ToString()
         {
-            return string.Format("{1}:{2}", Line, Column);
+            return String.Format("{0}:{1}", Line, Column);
         }
     }
 }
-

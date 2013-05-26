@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
-using JasonSharp.Frontend;
+using JasonSharp.Intermediate;
 
 namespace JasonSharp.Backend
 {
