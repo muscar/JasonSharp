@@ -34,6 +34,7 @@ namespace JasonSharp.Frontend
         Colon,
         QMark,
         EMark,
+        QMark2,
 
         Unknown,
         Eof
@@ -61,6 +62,7 @@ namespace JasonSharp.Frontend
         public static readonly Token Semicolon = new Token(TokenKind.Semicolon, ";");
         public static readonly Token Colon = new Token(TokenKind.Colon, ":");
         public static readonly Token QMark = new Token(TokenKind.QMark, "?");
+        public static readonly Token QMark2 = new Token(TokenKind.QMark2, "??");
         public static readonly Token EMark = new Token(TokenKind.EMark, "!");
         public static readonly Token Eof = new Token(TokenKind.Eof, "end of file");
 
@@ -167,6 +169,11 @@ namespace JasonSharp.Frontend
                         break;
                     case '?':
                         reader.Read();
+                        if (reader.Peek() == '?')
+                        {
+                            reader.Read();
+                            yield return Token.QMark2;
+                        }
                         yield return Token.QMark;
                         break;
                     case '!':

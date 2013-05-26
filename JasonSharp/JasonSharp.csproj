@@ -61,6 +61,7 @@
     <Compile Include="Text\TextSpan.cs" />
     <Compile Include="Text\TextLocation.cs" />
     <Compile Include="Frontend\SourceReader.cs" />
+    <Compile Include="Intermediate\PlanActionType.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -5,16 +5,11 @@ using System.Linq;
 
 namespace JasonSharp.Intermediate
 {
-	public abstract class Node : INode
-	{
-		public abstract void Accept(INodeVisitor visitor);
-	}
-
-	public class AgentDeclarationNode : Node
+	public class AgentDeclarationNode : INode
 	{
 		private readonly ReadOnlyCollection<Tuple<string, string>> args;
 		private readonly List<BeliefDeclarationNode> beliefDeclarations;
-		private readonly List<Node> body;
+		private readonly List<INode> body;
 
 		public readonly string Name;
 
@@ -23,22 +18,22 @@ namespace JasonSharp.Intermediate
 			get { return args; }
 		}
 
-		public IList<BeliefDeclarationNode> BeliefDeclarations
+		public ICollection<BeliefDeclarationNode> BeliefDeclarations
 		{
 			get { return beliefDeclarations; }
 		}
         
-		public IList<Node> Body
+		public ICollection<INode> Body
 		{
 			get { return body; }
 		}
 		
-		public AgentDeclarationNode(string name, IList<Tuple<string, string>> args, IList<Node> body)
+		public AgentDeclarationNode(string name, IList<Tuple<string, string>> args, IList<INode> body)
 		{
 			this.Name = name;
 			this.args = new ReadOnlyCollection<Tuple<string, string>>(args);
 			this.beliefDeclarations = new List<BeliefDeclarationNode>();
-			this.body = new List<Node>();
+			this.body = new List<INode>();
 
 			foreach (var node in body)
 			{
@@ -54,61 +49,61 @@ namespace JasonSharp.Intermediate
 			}
 		}
 
-		public override void Accept(INodeVisitor visitor)
+		public void Accept(INodeVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
 	}
     
-	public class BeliefDeclarationNode : Node
+	public class BeliefDeclarationNode : INode
 	{
-		private readonly ReadOnlyCollection<Node> args;
+		private readonly ReadOnlyCollection<INode> args;
 
 		public readonly string Name;
 
-		public IList<Node> Args
+		public ICollection<INode> Args
 		{
 			get { return args; }
 		}
         
-		public BeliefDeclarationNode(string name, IList<Node> args)
+		public BeliefDeclarationNode(string name, IList<INode> args)
 		{
 			this.Name = name;
-			this.args = new ReadOnlyCollection<Node>(args);
+			this.args = new ReadOnlyCollection<INode>(args);
 		}
 
-		public override void Accept(INodeVisitor visitor)
+		public void Accept(INodeVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
 	}
     
-	public class HandlerDeclarationNode : Node
+	public class HandlerDeclarationNode : INode
 	{
-		private readonly ReadOnlyCollection<Node> body;
+		private readonly ReadOnlyCollection<INode> body;
 
 		public readonly string Name;
-		public IList<Node> Body
+		public IList<INode> Body
 		{
 			get { return body; }
 		}
         
-		public HandlerDeclarationNode(string name, IList<Node> body)
+		public HandlerDeclarationNode(string name, IList<INode> body)
 		{
 			this.Name = name;
-			this.body = new ReadOnlyCollection<Node>(body);
+			this.body = new ReadOnlyCollection<INode>(body);
 		}
 
-		public override void Accept(INodeVisitor visitor)
+		public void Accept(INodeVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
 	}
 
-	public class PlanDeclarationNode : Node
+	public class PlanDeclarationNode : INode
 	{
 		private readonly ReadOnlyCollection<Tuple<string, string>> args;
-		private readonly ReadOnlyCollection<Node> body;
+		private readonly ReadOnlyCollection<INode> body;
 
 		public readonly string Name;
 		public IList<Tuple<string, string>> Args
@@ -116,88 +111,88 @@ namespace JasonSharp.Intermediate
 			get { return args; }
 		}
         
-		public IList<Node> Body
+		public IList<INode> Body
 		{
 			get { return body; }
 		}
 		
-		public PlanDeclarationNode(string name, IList<Tuple<string, string>> args, IList<Node> body)
+		public PlanDeclarationNode(string name, IList<Tuple<string, string>> args, IList<INode> body)
 		{
 			this.Name = name;
 			this.args = new ReadOnlyCollection<Tuple<string, string>>(args);
-			this.body = new ReadOnlyCollection<Node>(body);
+			this.body = new ReadOnlyCollection<INode>(body);
 		}
 
-		public override void Accept(INodeVisitor visitor)
+		public void Accept(INodeVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
 	}
 
-	public class BeliefQueryNode : Node
+    public abstract class PlanActionNode
+    {
+        private readonly ReadOnlyCollection<INode> args;
+
+        public string Name { get; private set; }
+        public IList<INode> Args { get { return args; } }
+
+        public PlanActionNode(string name, IList<INode> args)
+        {
+            this.Name = name;
+            this.args = new ReadOnlyCollection<INode>(args);
+        }
+    }
+
+    public class PlanInvocationNode : PlanActionNode, INode
+    {
+        public PlanInvocationNode(string name, IList<INode> args) : base(name, args) { }
+
+        public void Accept(INodeVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class BeliefQueryNode : PlanActionNode, INode
 	{
-		private readonly ReadOnlyCollection<Node> args;
+		public BeliefQueryNode(string name, IList<INode> args) : base(name, args) { }
 
-		public readonly string Name;
-		public IList<Node> Args
-		{
-			get { return args; }
-		}
-        
-		public BeliefQueryNode(string name, IList<Node> args)
-		{
-			this.Name = name;
-			this.args = new ReadOnlyCollection<Node>(args);
-		}
-
-		public override void Accept(INodeVisitor visitor)
+		public void Accept(INodeVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
 	}
 
-	public class BeliefUpdateNode : Node
-	{
-		private readonly ReadOnlyCollection<Node> args;
+    public class BeliefUpdateNode : PlanActionNode, INode
+    {
+        public BeliefUpdateNode(string name, IList<INode> args) : base(name, args) { }
 
-		public readonly string Name;
-		public IList<Node> Args
-		{
-			get { return args; }
-		}
+        public void Accept(INodeVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
 
-		public BeliefUpdateNode(string name, IList<Node> args)
-		{
-			this.Name = name;
-			this.args = new ReadOnlyCollection<Node>(args);
-		}
-
-		public override void Accept(INodeVisitor visitor)
-		{
-			visitor.Visit(this);
-		}
-	}
-
-	public class BinaryOpNode : Node
+	public class BinaryOpNode : INode
 	{
 		public readonly string Operator;
-		public readonly Node Left;
-		public readonly Node Right;
+		public readonly INode Left;
+		public readonly INode Right;
 
-		public BinaryOpNode(string @operator, Node left, Node right)
+		public BinaryOpNode(string @operator, INode left, INode right)
 		{
 			this.Operator = @operator;
 			this.Left = left;
 			this.Right = right;
 		}
 
-		public override void Accept(INodeVisitor visitor)
+		public void Accept(INodeVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
 	}
 
-	public class IdentNode : Node
+	public class IdentNode : INode
 	{
 		public readonly string Name;
         
@@ -206,13 +201,13 @@ namespace JasonSharp.Intermediate
 			this.Name = name;
 		}
 
-		public override void Accept(INodeVisitor visitor)
+		public void Accept(INodeVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
 	}
 
-	public class NumberNode : Node
+	public class NumberNode : INode
 	{
 		public readonly int Value;
         
@@ -221,7 +216,7 @@ namespace JasonSharp.Intermediate
 			this.Value = Int32.Parse(value);
 		}
 
-		public override void Accept(INodeVisitor visitor)
+		public void Accept(INodeVisitor visitor)
 		{
 			visitor.Visit(this);
 		}

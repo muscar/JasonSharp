@@ -137,7 +137,6 @@ namespace JasonSharp.Backend
 
         public void Visit(AgentDeclarationNode node)
         {
-            // create a new type to hold our Main method
             typeBuilder = moduleBuilder.DefineType(node.Name, TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.BeforeFieldInit);
 
             // Agent scope
@@ -169,7 +168,7 @@ namespace JasonSharp.Backend
             symbolTable.Exit();
         }
 
-        private void EmitCtor(IList<Tuple<string, string>> args, IList<BeliefDeclarationNode> beliefDeclarations)
+        private void EmitCtor(IList<Tuple<string, string>> args, ICollection<BeliefDeclarationNode> beliefDeclarations)
         {
             symbolTable.Enter();
 			
@@ -197,14 +196,14 @@ namespace JasonSharp.Backend
             symbolTable.Exit();
         }
 
-        private Type MakeTupleType(IList<Node> args)
+        private Type MakeTupleType(ICollection<INode> args)
         {
             var tupleOf = Type.GetType("System.Tuple`" + args.Count);
             var genericTypeOf = tupleOf.MakeGenericType(args.Select(a => typeof(int)).ToArray());
             return genericTypeOf;
         }
 
-        private void EmitTupleCreate(Type genericTupleOf, IList<Node> args)
+        private void EmitTupleCreate(Type genericTupleOf, ICollection<INode> args)
         {
             if (args.Count >= tupleCreateMethods.Length)
             {
@@ -257,6 +256,17 @@ namespace JasonSharp.Backend
             symbolTable.Register(node.Name, new MethodEntry(methodBuilder));
         }
 
+        public void Visit(PlanInvocationNode node)
+        {
+            il.Emit(OpCodes.Ldarg_0);
+            foreach (var arg in node.Args)
+            {
+                arg.Accept(this);
+            }
+            var method = symbolTable.Lookup<MethodEntry>(node.Name);
+            il.Emit(OpCodes.Call, method.Info);
+        }
+
         public void Visit(BeliefQueryNode node)
         {
             var field = symbolTable.Lookup<FieldEntry>(node.Name);
@@ -266,7 +276,7 @@ namespace JasonSharp.Backend
             for (int i = 0; i < args.Count; i++)
             {
                 var local = il.DeclareLocal(typeof(int));
-                symbolTable.Register((args [i] as IdentNode).Name, new LocalEntry(local));
+                symbolTable.Register((args[i] as IdentNode).Name, new LocalEntry(local));
                 il.Emit(OpCodes.Ldarg_0);
                 il.Emit(OpCodes.Ldfld, field.Info);
                 il.Emit(OpCodes.Call, genericTupleOf.GetMethod("get_Item" + (i + 1)));

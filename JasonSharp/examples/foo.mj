@@ -1,8 +1,12 @@
 agent Test(x: int, y: int) {
   bel foo(x, y)
 
-  plan bar(delta: int) {
+  plan doInc(delta: int) {
     ?foo(x, y);
-    !foo(x + delta, y + delta)
+    +foo(x + delta, y + delta)
+  }
+
+  plan bar(delta: int) {
+  	!doInc(delta)
   }
 }
