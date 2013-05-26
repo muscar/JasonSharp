@@ -1,5 +1,5 @@
 //
-// SourceSpan.cs
+// TextSpan.cs
 //
 // Author:
 //       Alex Muscar <muscar@gmail.com>
@@ -25,14 +25,14 @@
 // THE SOFTWARE.
 using System;
 
-namespace JasonSharp
+namespace JasonSharp.Text
 {
-    public class SourceSpan
+    public class TextSpan
     {
-        public readonly SourceSpan Start;
-        public readonly SourceSpan End;
+        public TextLocation Start { get; private set; }
+        public TextLocation End { get; private set; }
 
-        public SourceSpan(SourceSpan start, SourceSpan end)
+        public TextSpan(TextLocation start, TextLocation end)
         {
             Start = start;
             End = end;
@@ -40,7 +40,7 @@ namespace JasonSharp
 
         public override string ToString()
         {
-            return String.Format("{0} - {1}", Start, End);
+            return string.Format("{0} - {1}", Start, End);
         }
     }
 }

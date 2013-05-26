@@ -14,11 +14,9 @@ namespace JasonSharp
 //			Console.WriteLine(foo.foo);
 //			return;
 
-			using (var reader = new SourceStreamReader(@"../../examples/foo.mj"))
-			{
-				var node = new Parser(new Scanner(reader)).Parse();
-				CodeGenerator.Compile("foo", node);
-			}
+            var reader = new SourceReader(new StreamReader(@"../../examples/foo.mj"));
+			var node = new Parser(new Scanner(reader)).Parse();
+			CodeGenerator.Compile("foo", node);
 		}
 	}
 }

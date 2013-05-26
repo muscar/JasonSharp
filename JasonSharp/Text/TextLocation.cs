@@ -1,5 +1,5 @@
 //
-// SourceStream.cs
+// TextPosition.cs
 //
 // Author:
 //       Alex Muscar <muscar@gmail.com>
@@ -24,40 +24,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
-using System.IO;
 
-namespace JasonSharp
+namespace JasonSharp.Text
 {
-    public class SourceStringReader : StringReader, ISourceReader
+    public class TextLocation
     {
-        private int line = 1;
-        private int column = 1;
+        public int Line { get; private set; }
+        public int Column { get; private set; }
 
-        public SourceLocation Location
+        public TextLocation(int line, int column)
         {
-            get { return new SourceLocation(line, column); }
-            private set { }
+            Line = line;
+            Column = column;
         }
 
-        public SourceStringReader(string source)
-            : base(source)
+        public override string ToString()
         {
-        }
-
-        public override int Peek()
-        {
-            var c = base.Peek();
-            if (c == '\n')
-            {
-                line++;
-                column = 1;
-            }
-            else
-            {
-                column++;
-            }
-            return c;
+            return String.Format("{0}, {1}", Column, Line);
         }
     }
 }
-

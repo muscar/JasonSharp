@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
+
+using JasonSharp.Text;
 
 namespace JasonSharp.Frontend
 {
@@ -80,7 +81,7 @@ namespace JasonSharp.Frontend
 
     public class Scanner
     {
-        private readonly ISourceReader reader;
+        private readonly SourceReader reader;
         private readonly Dictionary<string, Token> keywords = new Dictionary<string, Token>()
         {
             { "agent", Token.KwAgent },
@@ -90,13 +91,12 @@ namespace JasonSharp.Frontend
             { "proto", Token.KwProto }
         };
 
-        public SourceLocation Location
+        public TextLocation Position
         {
-            get { return reader.Location; }
-            private set { }
+            get { return reader.Position; }
         }
 
-        public Scanner(ISourceReader reader)
+        public Scanner(SourceReader reader)
         {
             this.reader = reader;
         }

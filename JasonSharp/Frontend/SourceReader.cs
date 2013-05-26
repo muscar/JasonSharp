@@ -1,5 +1,5 @@
 //
-// SourceStream.cs
+// SourceReader.cs
 //
 // Author:
 //       Alex Muscar <muscar@gmail.com>
@@ -25,32 +25,56 @@
 // THE SOFTWARE.
 using System;
 using System.IO;
+using System.Text;
+
+using JasonSharp.Text;
 
 namespace JasonSharp
 {
-    public class SourceStreamReader : StreamReader, ISourceReader
+    public class SourceReader
     {
+        public const char EOS = '\uffff';
+
+        private readonly TextReader reader;
+        private readonly StringBuilder buffer;
+
         private int line = 1;
-        private int column = 1;
-        
-        public SourceLocation Location
+        private int column;
+
+        public bool EndOfStream
         {
-            get { return new SourceLocation(line, column); }
-            private set { }
+            get
+            {
+                return Peek() == EOS;
+            }
         }
-        
-        public SourceStreamReader(string path)
-            : base(path)
+
+        public TextLocation Position
         {
+            get
+            {
+                return new TextLocation(line, column);
+            }
         }
-        
-        public override int Peek()
+
+        public SourceReader(TextReader reader)
         {
-            var c = base.Peek();
+            this.reader = reader;
+            this.buffer = new StringBuilder();
+        }
+
+        public virtual char Peek()
+        {
+            return (char) reader.Peek();
+        }
+
+        public virtual char Read()
+        {
+            var c =  (char) reader.Read();
             if (c == '\n')
             {
+                column = 0;
                 line++;
-                column = 1;
             }
             else
             {
@@ -58,5 +82,16 @@ namespace JasonSharp
             }
             return c;
         }
+
+        public string ReadWhile(Predicate<char> pred)
+        {
+            buffer.Clear();
+            while (!EndOfStream && pred(Peek()))
+            {
+                buffer.Append(Read());
+            }
+            return buffer.ToString();
+        }
     }
 }
+
