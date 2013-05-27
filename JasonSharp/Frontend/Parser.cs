@@ -58,7 +58,7 @@ namespace JasonSharp.Frontend
         {
             Expect(Token.KwAgent);
             var name = Expect(new Token(TokenKind.Ident, "")); // XXX
-            IList<Tuple<string, string>> args = new List<Tuple<string, string>>();
+            var args = new List<Tuple<string, string>>();
             if (tokens.Current.Kind == TokenKind.LParen)
             {
                 Expect(Token.LParen);
