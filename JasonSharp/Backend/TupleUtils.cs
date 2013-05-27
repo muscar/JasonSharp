@@ -56,7 +56,7 @@ namespace JasonSharp.Backend
 
         public static void EmitTupleCreate(this ILGenerator il, Type[] argTypes)
         {
-            if (argTypes.Length >= tupleCreateMethods.Length)
+            if (argTypes.Length > tupleCreateMethods.Length)
             {
                 throw new ApplicationException(String.Format("Can't have more than {0} arguments. Yeah, it sucks, I know.", tupleCreateMethods.Length));
             }
