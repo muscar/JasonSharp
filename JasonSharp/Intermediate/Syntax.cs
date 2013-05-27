@@ -1,36 +1,48 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
+
+using ArgumentList = System.Collections.Generic.List<System.Tuple<string, string>>;
 
 namespace JasonSharp.Intermediate
 {
-    public abstract class ProceduralAbstractionNode
+    #region Abstract base classes
+
+    public abstract class AbstractProcedureNode
     {
         protected List<Tuple<string, string>> ArgsList { get; private set; }
         protected List<INode> BodyList { get; private set; }
-
         public string Name { get; private set; }
-
         public ReadOnlyCollection<Tuple<string, string>> Args
         {
             get { return ArgsList.AsReadOnly(); }
         }
-
         public ReadOnlyCollection<INode> Body
         {
             get { return BodyList.AsReadOnly(); }
         }
-
-        public ProceduralAbstractionNode(string name, List<Tuple<string, string>> args, List<INode> body)
+        public AbstractProcedureNode(string name, List<Tuple<string, string>> args, List<INode> body)
         {
             Name = name;
             ArgsList = args;
             BodyList = body;
         }
     }
+    public abstract class AbstractActionNode
+    {
+        private readonly List<INode> args;
+        public string Name { get; private set; }
+        public ReadOnlyCollection<INode> Args { get { return args.AsReadOnly(); } }
+        public AbstractActionNode(string name, List<INode> args)
+        {
+            this.Name = name;
+            this.args = args;
+        }
+    }
 
-    public class AgentDeclarationNode : ProceduralAbstractionNode, INode
+    #endregion
+
+    public class AgentDeclarationNode : AbstractProcedureNode, INode
     {
         private readonly List<BeliefDeclarationNode> beliefDeclarations;
 
@@ -39,7 +51,7 @@ namespace JasonSharp.Intermediate
             get { return beliefDeclarations.AsReadOnly(); }
         }
 
-        public AgentDeclarationNode(string name, List<Tuple<string, string>> args, List<INode> body)
+        public AgentDeclarationNode(string name, ArgumentList args, List<INode> body)
             : base(name, args, new List<INode>())
         {
             this.beliefDeclarations = new List<BeliefDeclarationNode>();
@@ -64,21 +76,11 @@ namespace JasonSharp.Intermediate
         }
     }
 
-    public class BeliefDeclarationNode : INode
+    public class BeliefDeclarationNode : AbstractActionNode, INode
     {
-        private readonly List<INode> args;
-
-        public string Name { get; private set; }
-
-        public ReadOnlyCollection<INode> Args
-        {
-            get { return args.AsReadOnly(); }
-        }
-
         public BeliefDeclarationNode(string name, List<INode> args)
+            : base(name, args)
         {
-            Name = name;
-            args = args;
         }
 
         public void Accept(INodeVisitor visitor)
@@ -87,9 +89,9 @@ namespace JasonSharp.Intermediate
         }
     }
 
-    public class HandlerDeclarationNode : ProceduralAbstractionNode, INode
+    public class HandlerDeclarationNode : AbstractProcedureNode, INode
     {
-        public HandlerDeclarationNode(string name, List<Tuple<string, string>> args, List<INode> body)
+        public HandlerDeclarationNode(string name, ArgumentList args, List<INode> body)
             : base(name, args, body)
         {
         }
@@ -100,9 +102,9 @@ namespace JasonSharp.Intermediate
         }
     }
 
-    public class PlanDeclarationNode : ProceduralAbstractionNode, INode
+    public class PlanDeclarationNode : AbstractProcedureNode, INode
     {
-        public PlanDeclarationNode(string name, List<Tuple<string, string>> args, List<INode> body)
+        public PlanDeclarationNode(string name, ArgumentList args, List<INode> body)
             : base(name, args, body)
         {
         }
@@ -113,22 +115,7 @@ namespace JasonSharp.Intermediate
         }
     }
 
-    public abstract class PlanActionNode
-    {
-        private readonly List<INode> args;
-
-        public string Name { get; private set; }
-
-        public ReadOnlyCollection<INode> Args { get { return args.AsReadOnly(); } }
-
-        public PlanActionNode(string name, List<INode> args)
-        {
-            this.Name = name;
-            this.args = args;
-        }
-    }
-
-    public class PlanInvocationNode : PlanActionNode, INode
+    public class PlanInvocationNode : AbstractActionNode, INode
     {
         public PlanInvocationNode(string name, List<INode> args) : base(name, args)
         {
@@ -140,7 +127,7 @@ namespace JasonSharp.Intermediate
         }
     }
 
-    public class BeliefQueryNode : PlanActionNode, INode
+    public class BeliefQueryNode : AbstractActionNode, INode
     {
         public BeliefQueryNode(string name, List<INode> args) : base(name, args)
         {
@@ -152,7 +139,7 @@ namespace JasonSharp.Intermediate
         }
     }
 
-    public class BeliefUpdateNode : PlanActionNode, INode
+    public class BeliefUpdateNode : AbstractActionNode, INode
     {
         public BeliefUpdateNode(string name, List<INode> args) : base(name, args)
         {
