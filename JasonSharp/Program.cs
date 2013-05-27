@@ -9,10 +9,10 @@ namespace JasonSharp
 	{
 		public static void Main(string[] args)
 		{
-//			var foo = new Test(10, 20);
-//			foo.bar(3);
-//			Console.WriteLine(foo.foo);
-//			return;
+			var foo = new Test(10, 20);
+			foo.bar(3);
+			Console.WriteLine(foo.foo);
+			return;
 
             if (args.Length != 1)
             {

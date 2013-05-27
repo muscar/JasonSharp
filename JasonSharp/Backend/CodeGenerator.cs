@@ -90,7 +90,6 @@ namespace JasonSharp.Backend
         
         public override void EmitStore(ILGenerator il)
         {
-            il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Stfld, Info);
         }
     }
