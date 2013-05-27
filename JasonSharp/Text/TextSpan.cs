@@ -23,6 +23,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 
 namespace JasonSharp.Text
@@ -30,6 +31,7 @@ namespace JasonSharp.Text
     public class TextSpan
     {
         public TextLocation Start { get; private set; }
+
         public TextLocation End { get; private set; }
 
         public TextSpan(TextLocation start, TextLocation end)

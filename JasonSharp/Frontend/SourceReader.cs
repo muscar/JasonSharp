@@ -23,21 +23,18 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.IO;
 using System.Text;
-
 using JasonSharp.Text;
 
 namespace JasonSharp
 {
     public class SourceReader
     {
-        public const char EOS = '\uffff';
-
         private readonly TextReader reader;
         private readonly StringBuilder buffer;
-
         private int offset;
         private int line = 1;
         private int column;
@@ -46,7 +43,7 @@ namespace JasonSharp
         {
             get
             {
-                return Peek() == EOS;
+                return reader.Peek() == -1;
             }
         }
 
@@ -71,7 +68,10 @@ namespace JasonSharp
 
         public virtual char Read()
         {
-            var c =  (char) reader.Read();
+            var c = (char) reader.Read();
+            // This will work do an extra column++ on Windows style newline, but
+            // it's harmless since it will immediately be followed by a \n so
+            // the column count will get resetted.
             if (c == '\n')
             {
                 column = 0;

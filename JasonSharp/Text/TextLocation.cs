@@ -1,5 +1,5 @@
 //
-// TextPosition.cs
+// TextLocation.cs
 //
 // Author:
 //       Alex Muscar <muscar@gmail.com>
@@ -23,6 +23,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 
 namespace JasonSharp.Text
@@ -30,7 +31,9 @@ namespace JasonSharp.Text
     public class TextLocation
     {
         public int Offset { get; private set; }
+
         public int Line { get; private set; }
+
         public int Column { get; private set; }
 
         public TextLocation(int offset, int line, int column)

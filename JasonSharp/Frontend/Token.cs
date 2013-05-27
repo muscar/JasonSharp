@@ -25,18 +25,18 @@
 // THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
-
 using JasonSharp.Text;
 
 namespace JasonSharp.Frontend
-{    
+{
     public class Token
     {
         public TokenKind Kind { get; private set; }
+
         public string Contents { get; private set; }
+
         public TextSpan Span { get; private set; }
-        
+
         public Token(TokenKind kind, string contents, TextSpan span)
         {
             Kind = kind;
@@ -56,5 +56,4 @@ namespace JasonSharp.Frontend
             return Contents;
         }
     }
-    
 }

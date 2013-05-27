@@ -1,10 +1,35 @@
-﻿using System;
+﻿//
+// CodeGenerator.cs
+//
+// Author:
+//       Alex Muscar <muscar@gmail.com>
+//
+// Copyright (c) 2013 Alex Muscar
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
-
 using JasonSharp.Intermediate;
 using JasonSharp.Backend;
 
@@ -13,13 +38,14 @@ namespace JasonSharp.Backend
     abstract class SymbolTableEntry
     {
         public abstract void EmitLookup(ILGenerator il);
+
         public abstract void EmitStore(ILGenerator il);
     }
 
     class ArgumentEntry : SymbolTableEntry
     {
         public readonly int Info;
-		
+
         public ArgumentEntry(int info)
         {
             this.Info = info;
@@ -66,7 +92,7 @@ namespace JasonSharp.Backend
         {
             il.Emit(OpCodes.Ldloc, Info);
         }
-        
+
         public override void EmitStore(ILGenerator il)
         {
             il.Emit(OpCodes.Stloc, Info);
@@ -87,7 +113,7 @@ namespace JasonSharp.Backend
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldfld, Info);
         }
-        
+
         public override void EmitStore(ILGenerator il)
         {
             il.Emit(OpCodes.Stfld, Info);
@@ -107,7 +133,7 @@ namespace JasonSharp.Backend
         {
             il.Emit(OpCodes.Ldftn, Info);
         }
-        
+
         public override void EmitStore(ILGenerator il)
         {
             throw new InvalidOperationException();
@@ -127,7 +153,6 @@ namespace JasonSharp.Backend
     class CodeGenerator : INodeVisitor
     {
         private readonly SymbolTable<string, SymbolTableEntry> symbolTable = new SymbolTable<string, SymbolTableEntry>();
-
         private readonly AssemblyBuilder assemblyBuilder;
         private readonly ModuleBuilder moduleBuilder;
         private TypeBuilder typeBuilder;
@@ -209,7 +234,6 @@ namespace JasonSharp.Backend
                 OnCodeGenError(new SemanticErrorEventArgs(String.Format("`{0}` is not in scope", name)));
             }
         }
-
         #region INodeVisitor Members
 
         public void Visit(AgentDeclarationNode node)
@@ -226,7 +250,7 @@ namespace JasonSharp.Backend
 
             var ctorBuilder = typeBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig, CallingConventions.HasThis, node.Args.Select(arg => typeof(int)).ToArray());
             il = ctorBuilder.GetILGenerator();
-			
+            
             EmitCtor(node.Args, node.BeliefDeclarations);
 
             foreach (var n in node.Body)
@@ -260,7 +284,7 @@ namespace JasonSharp.Backend
             var args = node.Args;
             for (int i = 0; i < args.Count; i++)
             {
-                symbolTable.Register(args [i].Item1, new ArgumentEntry(i + 1));
+                symbolTable.Register(args[i].Item1, new ArgumentEntry(i + 1));
             }
 
             foreach (var n in node.Body)
@@ -269,7 +293,7 @@ namespace JasonSharp.Backend
             }
 
             il.Emit(OpCodes.Ret);
-			
+            
             symbolTable.ExitScope();
 
             symbolTable.Register(node.Name, new MethodEntry(methodBuilder));
@@ -363,7 +387,6 @@ namespace JasonSharp.Backend
         {
             il.Emit(OpCodes.Ldc_I4, node.Value);
         }
-
         #endregion
     }
 }
