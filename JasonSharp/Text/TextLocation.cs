@@ -29,11 +29,13 @@ namespace JasonSharp.Text
 {
     public class TextLocation
     {
+        public int Offset { get; private set; }
         public int Line { get; private set; }
         public int Column { get; private set; }
 
-        public TextLocation(int line, int column)
+        public TextLocation(int offset, int line, int column)
         {
+            Offset = offset;
             Line = line;
             Column = column;
         }

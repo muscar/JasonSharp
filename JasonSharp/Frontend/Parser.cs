@@ -24,21 +24,21 @@ namespace JasonSharp.Frontend
 
         // Utils
         
-        private Token Expect(Token expected)
+        private Token Expect(TokenKind expected, string repr)
         {
-            if (tokens.Current.Kind != expected.Kind)
+            if (tokens.Current.Kind != expected)
             {
-                throw new ParseException(String.Format("Expecting `{0}`, but got `{1}`", expected, tokens.Current));
+                throw new ParseException(String.Format("{0}: Expecting `{1}`, but got `{2}`", tokens.Current.Span, repr, tokens.Current));
             }
             var token = tokens.Current;
             tokens.MoveNext();
             return token;
         }
 
-        private List<T> Sequence<T>(Token sep, Func<T> parser)
+        private List<T> Sequence<T>(TokenKind sep, Func<T> parser)
         {
             var seq = new List<T>() { parser() };
-            while (tokens.Current.Kind == sep.Kind)
+            while (tokens.Current.Kind == sep)
             {
                 tokens.MoveNext();
                 seq.Add(parser());
@@ -56,18 +56,18 @@ namespace JasonSharp.Frontend
 
         private INode ParseAgent()
         {
-            Expect(Token.KwAgent);
-            var name = Expect(new Token(TokenKind.Ident, "")); // XXX
+            Expect(TokenKind.KwAgent, "agent");
+            var name = Expect(TokenKind.Ident, "agent name (identifier)");
             var args = new List<Tuple<string, string>>();
             if (tokens.Current.Kind == TokenKind.LParen)
             {
-                Expect(Token.LParen);
+                Expect(TokenKind.LParen, "(");
                 args = ParseArgumentList();
-                Expect(Token.RParen);
+                Expect(TokenKind.RParen, ")");
             }
-            Expect(Token.LCurly);
+            Expect(TokenKind.LCurly, "{");
             var body = ParseAgentBody().ToList();
-            Expect(Token.RCurly);
+            Expect(TokenKind.RCurly, "}");
             return new AgentDeclarationNode(name.Contents, args, body);
         }
 
@@ -82,16 +82,16 @@ namespace JasonSharp.Frontend
                         break;
                     case TokenKind.KwOn:
                         {
-                            Expect(Token.KwOn);
+                            Expect(TokenKind.KwOn, "on (keyword)");
                             var handler = ParseProceduralAbstraction();
                             yield return new HandlerDeclarationNode(handler.Item1, handler.Item2, handler.Item3);
                         }
                         break;
                     case TokenKind.KwPlan:
                         {
-                            Expect(Token.KwPlan);
-                            var handler = ParseProceduralAbstraction();
-                            yield return new PlanDeclarationNode(handler.Item1, handler.Item2, handler.Item3);
+                            Expect(TokenKind.KwPlan, "plan (keyword)");
+                            var plan = ParseProceduralAbstraction();
+                        yield return new PlanDeclarationNode(plan.Item1, plan.Item2, plan.Item3);
                         }
                         break;
                     default:
@@ -102,58 +102,44 @@ namespace JasonSharp.Frontend
 
         private INode ParseBeliefDeclaration()
         {
-            Expect(Token.KwBel);
-            var name = Expect(new Token(TokenKind.Ident, "")); // XXX
+            Expect(TokenKind.KwBel, "bel (keyword)");
+            var name = Expect(TokenKind.Ident, "belief name (identifier)");
             var args = new List<INode>();
-            Expect(Token.LParen);
+            Expect(TokenKind.LParen, "(");
             if (tokens.Current.Kind != TokenKind.RParen)
             {
-                args = Sequence(Token.Comma, ParseAtom);
+                args = Sequence(TokenKind.Comma, ParseAtom);
             }
-            Expect(Token.RParen);
+            Expect(TokenKind.RParen, ")");
             return new BeliefDeclarationNode(name.Contents, args);
         }
 
         private Tuple<string, List<Tuple<string, string>>, List<INode>> ParseProceduralAbstraction()
         {
-            var name = Expect(new Token(TokenKind.Ident, "")); // XXX
+            var name = Expect(TokenKind.Ident, "identifier");
             var args = new List<Tuple<string, string>>();
             if (tokens.Current.Kind == TokenKind.LParen)
             {
-                Expect(Token.LParen);
+                Expect(TokenKind.LParen, "(");
                 args = ParseArgumentList();
-                Expect(Token.RParen);
+                Expect(TokenKind.RParen, ")");
             }
-            Expect(Token.LCurly);
-            var body = Sequence(Token.Semicolon, ParseStatement);
-            Expect(Token.RCurly);
+            Expect(TokenKind.LCurly, "{");
+            var body = Sequence(TokenKind.Semicolon, ParseStatement);
+            Expect(TokenKind.RCurly, "}");
             return Tuple.Create(name.Contents, args, body);
-        }
-
-        private INode ParseHandlerDeclaration()
-        {
-            Expect(Token.KwOn);
-            var handler = ParseProceduralAbstraction();
-            return new HandlerDeclarationNode(handler.Item1, handler.Item2, handler.Item3);
-        }
-
-        private INode ParsePlanDeclaration()
-        {
-            Expect(Token.KwPlan);
-            var handler = ParseProceduralAbstraction();
-            return new PlanDeclarationNode(handler.Item1, handler.Item2, handler.Item3);
         }
 
         private List<Tuple<string, string>> ParseArgumentList()
         {
             Func<Tuple<string, string>> parseArg = () =>
             {
-                var name = Expect(new Token(TokenKind.Ident, "")); // XXX
-                Expect(Token.Colon);
-                var typeName = Expect(new Token(TokenKind.Ident, "")); // XXX
+                var name = Expect(TokenKind.Ident, "argument name (identifier)");
+                Expect(TokenKind.Colon, ":");
+                var typeName = Expect(TokenKind.Ident, "type name");
                 return Tuple.Create(name.Contents, typeName.Contents);
             };
-            return Sequence(Token.Comma, parseArg);
+            return Sequence(TokenKind.Comma, parseArg);
         }
 
         private INode ParseStatement()
@@ -162,37 +148,37 @@ namespace JasonSharp.Frontend
             {
                 case TokenKind.QMark:
                     {
-                        Expect(Token.QMark);
+                        Expect(TokenKind.QMark, "?");
                         var term = ParseCompoundTerm(); 
                         return new BeliefQueryNode(term.Item1, term.Item2);
                     }
                 case TokenKind.Plus:
                     {
-                        Expect(Token.Plus);
+                        Expect(TokenKind.Plus, "+");
                         var term = ParseCompoundTerm(); 
                         return new BeliefUpdateNode(term.Item1, term.Item2);
                     }
                 case TokenKind.EMark:
                     {
-                        Expect(Token.EMark);
+                        Expect(TokenKind.EMark, "!");
                         var term = ParseCompoundTerm(); 
                         return new PlanInvocationNode(term.Item1, term.Item2);
                     }
                 default:
-                    throw new ParseException(String.Format("Unexpected token `{0}`", tokens.Current.Contents));
+                    throw new ParseException(String.Format("{0}: Unexpected token `{1}`", tokens.Current.Span, tokens.Current.Contents));
             }
         }
 
         private Tuple<string, List<INode>> ParseCompoundTerm()
         {
-            var name = Expect(new Token(TokenKind.Ident, "")); // XXX
+            var name = Expect(TokenKind.Ident, "identifier");
             var args = new List<INode>();
-            Expect(Token.LParen);
+            Expect(TokenKind.LParen, "(");
             if (tokens.Current.Kind != TokenKind.RParen)
             {
-                args = Sequence(Token.Comma, ParseExpression);
+                args = Sequence(TokenKind.Comma, ParseExpression);
             }
-            Expect(Token.RParen);
+            Expect(TokenKind.RParen, ")");
             return Tuple.Create(name.Contents, args);
         }
 
@@ -230,7 +216,7 @@ namespace JasonSharp.Frontend
                     tokens.MoveNext();
                     return new IdentNode(token.Contents);
             }
-            throw new ParseException(String.Format("Unexpected token `{0}`", token.Contents));
+            throw new ParseException(String.Format("{0}: Unexpected token `{1}`", tokens.Current.Span, token.Contents));
         }
     }
 }

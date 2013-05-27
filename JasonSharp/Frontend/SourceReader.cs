@@ -38,6 +38,7 @@ namespace JasonSharp
         private readonly TextReader reader;
         private readonly StringBuilder buffer;
 
+        private int offset;
         private int line = 1;
         private int column;
 
@@ -49,11 +50,11 @@ namespace JasonSharp
             }
         }
 
-        public TextLocation Position
+        public TextLocation Location
         {
             get
             {
-                return new TextLocation(line, column);
+                return new TextLocation(offset, line, column);
             }
         }
 
@@ -80,6 +81,7 @@ namespace JasonSharp
             {
                 column++;
             }
+            offset++;
             return c;
         }
 

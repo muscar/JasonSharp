@@ -7,39 +7,17 @@ namespace JasonSharp.Frontend
 {    
     public class Token
     {
-        public static readonly Token KwAgent = new Token(TokenKind.KwAgent, "agent");
-        public static readonly Token KwBel = new Token(TokenKind.KwBel, "bel");
-        public static readonly Token KwOn = new Token(TokenKind.KwOn, "on");
-        public static readonly Token KwPlan = new Token(TokenKind.KwPlan, "plan");
-        public static readonly Token KwProto = new Token(TokenKind.KwProto, "proto");
-        public static readonly Token Plus = new Token(TokenKind.Plus, "+");
-        public static readonly Token Minus = new Token(TokenKind.Minus, "-");
-        public static readonly Token Mul = new Token(TokenKind.Mul, "*");
-        public static readonly Token Div = new Token(TokenKind.Div, "/");
-        public static readonly Token LParen = new Token(TokenKind.LParen, "(");
-        public static readonly Token RParen = new Token(TokenKind.RParen, ")");
-        public static readonly Token LBracket = new Token(TokenKind.LBracket, "[");
-        public static readonly Token RBracket = new Token(TokenKind.RBracket, "]");
-        public static readonly Token LCurly = new Token(TokenKind.LCurly, "{");
-        public static readonly Token RCurly = new Token(TokenKind.RCurly, "}");
-        public static readonly Token Comma = new Token(TokenKind.Comma, ",");
-        public static readonly Token Period = new Token(TokenKind.Period, ".");
-        public static readonly Token Semicolon = new Token(TokenKind.Semicolon, ";");
-        public static readonly Token Colon = new Token(TokenKind.Colon, ":");
-        public static readonly Token QMark = new Token(TokenKind.QMark, "?");
-        public static readonly Token QMark2 = new Token(TokenKind.QMark2, "??");
-        public static readonly Token EMark = new Token(TokenKind.EMark, "!");
-        public static readonly Token Eof = new Token(TokenKind.Eof, "end of file");
-
-        public readonly TokenKind Kind;
-        public readonly string Contents;
+        public TokenKind Kind { get; private set; }
+        public string Contents { get; private set; }
+        public TextSpan Span { get; private set; }
         
-        public Token(TokenKind kind, string contents)
+        public Token(TokenKind kind, string contents, TextSpan span)
         {
-            this.Kind = kind;
-            this.Contents = contents;
+            Kind = kind;
+            Contents = contents;
+            Span = span;
         }
-        
+
         public override string ToString()
         {
             return Contents;
@@ -49,18 +27,18 @@ namespace JasonSharp.Frontend
     public class Scanner
     {
         private readonly SourceReader reader;
-        private readonly Dictionary<string, Token> keywords = new Dictionary<string, Token>()
+        private readonly Dictionary<string, TokenKind> keywords = new Dictionary<string, TokenKind>
         {
-            { "agent", Token.KwAgent },
-            { "bel", Token.KwBel },
-            { "on", Token.KwOn },
-            { "plan", Token.KwPlan },
-            { "proto", Token.KwProto }
+            { "agent", TokenKind.KwAgent },
+            { "bel", TokenKind.KwBel },
+            { "on", TokenKind.KwOn },
+            { "plan", TokenKind.KwPlan },
+            { "proto", TokenKind.KwProto }
         };
 
         public TextLocation Position
         {
-            get { return reader.Position; }
+            get { return reader.Location; }
         }
 
         public Scanner(SourceReader reader)
@@ -73,108 +51,129 @@ namespace JasonSharp.Frontend
             while (true)
             {
                 reader.ReadWhile(Char.IsWhiteSpace);
-                var c = (char)reader.Peek();
+                var startLocation = reader.Location;
+                var lexeme = String.Empty;
+                var tokenKind = TokenKind.Unknown;
+                var c = (char) reader.Peek();
+
                 switch (c)
                 {
                     case '+':
                         reader.Read();
-                        yield return Token.Plus;
+                        tokenKind = TokenKind.Plus;
+                        lexeme = "+";
                         break;
                     case '-':
                         reader.Read();
-                        yield return Token.Minus;
+                        tokenKind = TokenKind.Minus;
+                        lexeme = "-";
                         break;
                     case '*':
                         reader.Read();
-                        yield return Token.Mul;
+                        tokenKind = TokenKind.Mul;
+                        lexeme = "*";
                         break;
                     case '/':
                         reader.Read();
-                        yield return Token.Div;
+                        tokenKind = TokenKind.Div;
+                        lexeme = "/";
                         break;
                     case '(':
                         reader.Read();                        
-                        yield return Token.LParen;
+                        tokenKind = TokenKind.LParen;
+                        lexeme = "(";
                         break;
                     case ')':
                         reader.Read();
-                        yield return Token.RParen;
+                        tokenKind = TokenKind.RParen;
+                        lexeme = ")";
                         break;
                     case '[':
                         reader.Read();
-                        yield return Token.LBracket;
+                        tokenKind = TokenKind.LBracket;
+                        lexeme = "[";
                         break;
                     case ']':
                         reader.Read();
-                        yield return Token.RBracket;
+                        tokenKind = TokenKind.RBracket;
+                        lexeme = "]";
                         break;
                     case '{':
                         reader.Read();
-                        yield return Token.LCurly;
+                        tokenKind = TokenKind.LCurly;
+                        lexeme = "{";
                         break;
                     case '}':
                         reader.Read();
-                        yield return Token.RCurly;
+                        tokenKind = TokenKind.RCurly;
+                        lexeme = "}";
                         break;
                     case ',':
                         reader.Read();
-                        yield return Token.Comma;
+                        tokenKind = TokenKind.Comma;
+                        lexeme = ",";
                         break;
                     case '.':
                         reader.Read();
-                        yield return Token.Period;
+                        tokenKind = TokenKind.Period;
+                        lexeme = ".";
                         break;
                     case ';':
                         reader.Read();
-                        yield return Token.Semicolon;
+                        tokenKind = TokenKind.Semicolon;
+                        lexeme = ";";
                         break;
                     case ':':
                         reader.Read();
-                        yield return Token.Colon;
+                        tokenKind = TokenKind.Colon;
+                        lexeme = ":";
                         break;
                     case '?':
                         reader.Read();
                         if (reader.Peek() == '?')
                         {
                             reader.Read();
-                            yield return Token.QMark2;
+                            tokenKind = TokenKind.QMark2;
+                            lexeme = "??";
                         }
-                        yield return Token.QMark;
+                        else
+                        {
+                            tokenKind = TokenKind.QMark;
+                            lexeme = "?";
+                        }
                         break;
                     case '!':
                         reader.Read();
-                        yield return Token.EMark;
+                        tokenKind = TokenKind.EMark;
+                        lexeme = "!";
                         break;
                     case '\uffff':
-                        yield return Token.Eof;
+                        tokenKind = TokenKind.Eof;
+                        lexeme = "end of file";
                         yield break;
                     default:
                         if (Char.IsDigit(c))
                         {
-                            var lexeme = reader.ReadWhile(Char.IsDigit);
-                            yield return new Token(TokenKind.Number, lexeme);
+                            lexeme = reader.ReadWhile(Char.IsDigit);
+                            tokenKind = TokenKind.Number;
                         }
                         else if (Char.IsLetterOrDigit(c))
                         {
-                            var lexeme = reader.ReadWhile(Char.IsLetterOrDigit);
+                            lexeme = reader.ReadWhile(Char.IsLetterOrDigit);
                             
-                            Token keyword;
-                            if (keywords.TryGetValue(lexeme, out keyword))
+                            if (!keywords.TryGetValue(lexeme, out tokenKind))
                             {
-                                yield return keyword;
-                            }
-                            else
-                            {
-                                yield return new Token(TokenKind.Ident, lexeme);
+                                tokenKind = TokenKind.Ident;
                             }
                         }
                         else
                         {
-                            var lexeme = reader.ReadWhile(x => !Char.IsWhiteSpace(x));
-                            yield return new Token(TokenKind.Unknown, lexeme);
+                            lexeme = reader.ReadWhile(x => !Char.IsWhiteSpace(x));
                         }
                         break;
                 }
+
+                yield return new Token(tokenKind, lexeme, new TextSpan(startLocation, reader.Location));
             }
         }
     }
