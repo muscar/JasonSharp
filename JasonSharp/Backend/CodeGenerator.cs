@@ -234,14 +234,6 @@ namespace JasonSharp.Backend
                 n.Accept(this);
             }
 
-//			// create the Main(string[] args) method
-//			methodBuilder = typeBuilder.DefineMethod("Main", MethodAttributes.HideBySig | MethodAttributes.Static | MethodAttributes.Public, typeof(void), new Type[] { typeof(string[]) });
-//			
-//			// generate the IL for the Main method
-//			il = methodBuilder.GetILGenerator();
-//
-//			il.Emit(OpCodes.Ret);
-
             symbolTable.ExitScope();
         }
 

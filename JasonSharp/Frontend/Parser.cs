@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using JasonSharp.Intermediate;
 
+using ArgumentList = System.Collections.Generic.List<System.Tuple<string, string>>;
+
 namespace JasonSharp.Frontend
 {
     public class SyntacticErrorEventArgs : EventArgs
@@ -81,7 +83,7 @@ namespace JasonSharp.Frontend
         {
             Expect(TokenKind.KwAgent, "agent");
             var name = Expect(TokenKind.Ident, "agent name (identifier)");
-            var args = new List<Tuple<string, string>>();
+            var args = new ArgumentList();
             if (tokens.Current.Kind == TokenKind.LParen)
             {
                 Expect(TokenKind.LParen, "(");
@@ -137,10 +139,10 @@ namespace JasonSharp.Frontend
             return new BeliefDeclarationNode(name.Contents, args);
         }
 
-        private Tuple<string, List<Tuple<string, string>>, List<INode>> ParseProceduralAbstraction()
+        private Tuple<string, ArgumentList, List<INode>> ParseProceduralAbstraction()
         {
             var name = Expect(TokenKind.Ident, "identifier");
-            var args = new List<Tuple<string, string>>();
+            var args = new ArgumentList();
             if (tokens.Current.Kind == TokenKind.LParen)
             {
                 Expect(TokenKind.LParen, "(");
@@ -153,7 +155,7 @@ namespace JasonSharp.Frontend
             return Tuple.Create(name.Contents, args, body);
         }
 
-        private List<Tuple<string, string>> ParseArgumentList()
+        private ArgumentList ParseArgumentList()
         {
             Func<Tuple<string, string>> parseArg = () =>
             {
