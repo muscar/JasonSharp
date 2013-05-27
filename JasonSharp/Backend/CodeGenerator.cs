@@ -140,17 +140,22 @@ namespace JasonSharp.Backend
             symbolTable.ExitScope();
         }
 
-        void EmitBeliefUpdate(string name, IEnumerable<INode> args)
+        void EmitBeliefUpdate(string name, IList<INode> args)
         {
             var field = symbolTable.LookupAs<FieldEntry>(name);
             if (field != null)
             {
+                var argTypes = new Type[args.Count];
+
                 il.Emit(OpCodes.Ldarg_0);
-                foreach (var arg in args)
+
+                for (int i = 0; i < args.Count; i++)
                 {
-                    arg.Accept(this);
+                    args[i].Accept(this);
+                    argTypes[i] = typeof(int);
                 }
-                il.EmitTupleCreate(args.Select(a => typeof(int)).ToArray());
+
+                il.EmitTupleCreate(argTypes);
                 il.Emit(OpCodes.Stfld, field.Info);
             }
         }

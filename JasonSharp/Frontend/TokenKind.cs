@@ -1,5 +1,5 @@
 //
-// PlanActionType.cs
+// TokenKind.cs
 //
 // Author:
 //       Alex Muscar <muscar@gmail.com>
@@ -23,16 +23,43 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
 
-namespace JasonSharp.Intermediate
+namespace JasonSharp.Frontend
 {
-    public enum PlanActionKind
+    public enum TokenKind
     {
-        BeliefQuerySync,
-        BeliefQueryAsync,
-        BeliefUpdate,
-        PlanInvocation
+        // Basic lexemes
+        Ident,
+        Number,
+        // Keywords
+        KwAgent,
+        KwBel,
+        KwOn,
+        KwPlan,
+        KwProto,
+        // Operators
+        Plus,
+        Minus,
+        Mul,
+        Div,
+        // Grouping
+        LParen,
+        RParen,
+        LBracket,
+        RBracket,
+        LCurly,
+        RCurly,
+        // Punctuation
+        Comma,
+        Period,
+        Semicolon,
+        Colon,
+        QMark,
+        EMark,
+        QMark2,
+        // Misc
+        Unknown,
+        Eof
     }
+    
 }
-

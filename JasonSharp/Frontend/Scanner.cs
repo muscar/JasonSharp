@@ -4,42 +4,7 @@ using System.Collections.Generic;
 using JasonSharp.Text;
 
 namespace JasonSharp.Frontend
-{
-    public enum TokenKind
-    {
-        Ident,
-        Number,
-        
-        KwAgent,
-        KwBel,
-        KwOn,
-        KwPlan,
-        KwProto,
-
-        Plus,
-        Minus,
-        Mul,
-        Div,
-        
-        LParen,
-        RParen,
-        LBracket,
-        RBracket,
-        LCurly,
-        RCurly,
-
-        Comma,
-        Period,
-        Semicolon,
-        Colon,
-        QMark,
-        EMark,
-        QMark2,
-
-        Unknown,
-        Eof
-    }
-    
+{    
     public class Token
     {
         public static readonly Token KwAgent = new Token(TokenKind.KwAgent, "agent");

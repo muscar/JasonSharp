@@ -157,9 +157,9 @@ namespace JasonSharp.Intermediate
         public INode Left { get; private set; }
         public INode Right { get; private set; }
 
-        public BinaryOpNode(string @operator, INode left, INode right)
+        public BinaryOpNode(string op, INode left, INode right)
         {
-            this.Operator = @operator;
+            this.Operator = op;
             this.Left = left;
             this.Right = right;
         }
