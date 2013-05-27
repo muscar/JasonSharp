@@ -178,7 +178,6 @@ namespace JasonSharp.Backend
                 }
 
                 il.EmitTupleCreate(argTypes);
-//                il.Emit(OpCodes.Stfld, field.Info);
                 field.EmitStore(il);
             }
         }
