@@ -11,16 +11,21 @@ namespace JasonSharp.Intermediate
     public abstract class AbstractProcedureNode
     {
         protected List<Tuple<string, string>> ArgsList { get; private set; }
+
         protected List<INode> BodyList { get; private set; }
+
         public string Name { get; private set; }
+
         public ReadOnlyCollection<Tuple<string, string>> Args
         {
             get { return ArgsList.AsReadOnly(); }
         }
+
         public ReadOnlyCollection<INode> Body
         {
             get { return BodyList.AsReadOnly(); }
         }
+
         public AbstractProcedureNode(string name, List<Tuple<string, string>> args, List<INode> body)
         {
             Name = name;
@@ -31,8 +36,11 @@ namespace JasonSharp.Intermediate
     public abstract class AbstractActionNode
     {
         private readonly List<INode> args;
+
         public string Name { get; private set; }
+
         public ReadOnlyCollection<INode> Args { get { return args.AsReadOnly(); } }
+
         public AbstractActionNode(string name, List<INode> args)
         {
             this.Name = name;
