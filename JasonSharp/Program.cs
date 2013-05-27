@@ -9,11 +9,6 @@ namespace JasonSharp
 	{
 		public static void Main(string[] args)
 		{
-			var foo = new Test(10, 20);
-			foo.bar(3);
-			Console.WriteLine(foo.foo);
-			return;
-
             if (args.Length != 1)
             {
                 Console.WriteLine("Usage: JasonSharp.exe <source>");
@@ -27,15 +22,24 @@ namespace JasonSharp
             var codegen = new CodeGenerator(compilationUnitName);
 
             parser.ParseError += (sender, e) => Console.WriteLine(e.Message);
+            codegen.CodegenError += (sender, e) => Console.WriteLine(e.Message);
+
 			var node = parser.Parse();
 
             if (parser.HasErrors)
             {
-                Console.WriteLine("Errors encountered while parsing");
+                Console.WriteLine("Errors encountered during syntactic analysis. Aborting.");
                 return;
             }
 
             codegen.Compile(node);
-		}
+
+            if (codegen.HasErrors)
+            {
+                Console.WriteLine("Errors encountered during semantic analysis. Deleting assembly.");
+                File.Delete(codegen.ModuleName);
+                return;
+            }
+}
 	}
 }

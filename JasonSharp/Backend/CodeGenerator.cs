@@ -114,6 +114,16 @@ namespace JasonSharp.Backend
         }
     }
 
+    public class SemanticErrorEventArgs : EventArgs
+    {
+        public string Message { get; private set; }
+
+        public SemanticErrorEventArgs(string message)
+        {
+            Message = message;
+        }
+    }
+
     class CodeGenerator : INodeVisitor
     {
         private readonly SymbolTable<string, SymbolTableEntry> symbolTable = new SymbolTable<string, SymbolTableEntry>();
@@ -124,11 +134,26 @@ namespace JasonSharp.Backend
         private MethodBuilder methodBuilder;
         private ILGenerator il;
 
+        public event EventHandler<SemanticErrorEventArgs> CodegenError;
+
+        public bool HasErrors { get; private set; }
+
+        public string ModuleName { get { return moduleBuilder.Name; } }
+
         public CodeGenerator(string moduleName)
         {
             var assemblyName = new AssemblyName { Name = moduleName };
             assemblyBuilder = Thread.GetDomain().DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Save);
             moduleBuilder = assemblyBuilder.DefineDynamicModule(moduleName + ".dll");
+        }
+
+        protected virtual void OnCodeGenError(SemanticErrorEventArgs e)
+        {
+            if (CodegenError != null)
+            {
+                CodegenError(this, e);
+            }
+            HasErrors = true;
         }
 
         public void Compile(INode moduleAst)
@@ -163,8 +188,8 @@ namespace JasonSharp.Backend
 
         void EmitBeliefUpdate(string name, IList<INode> args)
         {
-            var field = symbolTable.LookupAs<FieldEntry>(name);
-            if (field != null)
+            SymbolTableEntry field;
+            if (symbolTable.TryLookup(name, out field))
             {
                 var argTypes = new Type[args.Count];
 
@@ -178,6 +203,10 @@ namespace JasonSharp.Backend
 
                 il.EmitTupleCreate(argTypes);
                 field.EmitStore(il);
+            }
+            else
+            {
+                OnCodeGenError(new SemanticErrorEventArgs(String.Format("`{0}` is not in scope", name)));
             }
         }
 
@@ -225,7 +254,7 @@ namespace JasonSharp.Backend
 
         public void Visit(HandlerDeclarationNode node)
         {
-            throw new NotImplementedException();
+            OnCodeGenError(new SemanticErrorEventArgs("Code generation for handlers is not implemented"));
         }
 
         public void Visit(PlanDeclarationNode node)
@@ -261,24 +290,38 @@ namespace JasonSharp.Backend
             {
                 arg.Accept(this);
             }
-            var method = symbolTable.LookupAs<MethodEntry>(node.Name);
-            il.Emit(OpCodes.Call, method.Info);
+            SymbolTableEntry method;
+            if (symbolTable.TryLookup(node.Name, out method))
+            {
+                il.Emit(OpCodes.Call, (method as MethodEntry).Info);
+            }
+            else
+            {
+                OnCodeGenError(new SemanticErrorEventArgs(String.Format("`{0}` is not in scope", node.Name)));
+            }
         }
 
         public void Visit(BeliefQueryNode node)
         {
-            var field = symbolTable.LookupAs<FieldEntry>(node.Name);
-            var args = node.Args;
-            var argTypes = args.Select(a => typeof(int)).ToArray();
+            SymbolTableEntry field;
 
-            for (int i = 0; i < args.Count; i++)
+            if (symbolTable.TryLookup(node.Name, out field))
             {
-                var local = il.DeclareLocal(typeof(int));
-                symbolTable.Register((args[i] as IdentNode).Name, new LocalEntry(local));
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldfld, field.Info);
-                il.EmitTupleGetItem(argTypes, i);
-                il.Emit(OpCodes.Stloc, local);
+                var args = node.Args;
+                var argTypes = args.Select(a => typeof(int)).ToArray();
+
+                for (int i = 0; i < args.Count; i++)
+                {
+                    var local = il.DeclareLocal(typeof(int));
+                    symbolTable.Register((args[i] as IdentNode).Name, new LocalEntry(local));
+                    field.EmitLookup(il);
+                    il.EmitTupleGetItem(argTypes, i);
+                    il.Emit(OpCodes.Stloc, local);
+                }
+            }
+            else
+            {
+                OnCodeGenError(new SemanticErrorEventArgs(String.Format("`{0}` is not in scope", node.Name)));
             }
         }
 
@@ -306,14 +349,22 @@ namespace JasonSharp.Backend
                     il.Emit(OpCodes.Div);
                     break;
                 default:
-                    throw new ApplicationException(String.Format("Unknown operator {0}", node.Operator));
+                    OnCodeGenError(new SemanticErrorEventArgs(String.Format("Unknown operator {0}", node.Operator)));
+                    break;
             }
         }
 
         public void Visit(IdentNode node)
         {
-            var info = symbolTable.LookupAs(node.Name);
-            info.EmitLookup(il);
+            SymbolTableEntry info;
+            if (symbolTable.TryLookup(node.Name, out info))
+            {
+                info.EmitLookup(il);
+            }
+            else
+            {
+                OnCodeGenError(new SemanticErrorEventArgs(String.Format("`{0}` is not in scope", node.Name)));
+            }
         }
 
         public void Visit(NumberNode node)

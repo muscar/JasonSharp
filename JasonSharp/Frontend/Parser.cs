@@ -5,11 +5,11 @@ using JasonSharp.Intermediate;
 
 namespace JasonSharp.Frontend
 {
-    public class ParseErrorEventArgs : EventArgs
+    public class SyntacticErrorEventArgs : EventArgs
     {
         public string Message { get; private set; }
 
-        public ParseErrorEventArgs(string message)
+        public SyntacticErrorEventArgs(string message)
         {
             Message = message;
         }
@@ -19,7 +19,7 @@ namespace JasonSharp.Frontend
     {
         private readonly IEnumerator<Token> tokens;
 
-        public event EventHandler<ParseErrorEventArgs> ParseError;
+        public event EventHandler<SyntacticErrorEventArgs> ParseError;
 
         public bool HasErrors { get; private set; }
 
@@ -28,7 +28,7 @@ namespace JasonSharp.Frontend
             this.tokens = scanner.Scan().GetEnumerator();
         }
 
-        protected virtual void OnParseError(ParseErrorEventArgs e)
+        protected virtual void OnParseError(SyntacticErrorEventArgs e)
         {
             if (ParseError != null)
             {
@@ -44,7 +44,7 @@ namespace JasonSharp.Frontend
             if (tokens.Current.Kind != expected)
             {
                 var message = String.Format("{0}: Expecting {1}, but got {2}", tokens.Current.Span, expected.GetDescription(), tokens.Current);
-                OnParseError(new ParseErrorEventArgs(message));
+                OnParseError(new SyntacticErrorEventArgs(message));
             }
             var token = tokens.Current;
             tokens.MoveNext();
@@ -190,7 +190,7 @@ namespace JasonSharp.Frontend
                 default:
                     {
                         var message = String.Format("{0}: Unexpected token: {1}", tokens.Current.Span, tokens.Current);
-                        OnParseError(new ParseErrorEventArgs(message));
+                        OnParseError(new SyntacticErrorEventArgs(message));
                         SkipWhile(tok => tok.Kind != TokenKind.Semicolon);
                         tokens.MoveNext();
                         return null;
@@ -241,13 +241,15 @@ namespace JasonSharp.Frontend
             switch (token.Kind)
             {
                 case TokenKind.Ident:
-                case TokenKind.Number:
                     tokens.MoveNext();
                     return new IdentNode(token.Contents);
+                case TokenKind.Number:
+                    tokens.MoveNext();
+                    return new NumberNode(token.Contents);
                 default:
                     {
                         var message = String.Format("{0}: Unexpected token: {1}", tokens.Current.Span, token);
-                        OnParseError(new ParseErrorEventArgs(message));
+                        OnParseError(new SyntacticErrorEventArgs(message));
                         tokens.MoveNext();
                         return null;
                     }

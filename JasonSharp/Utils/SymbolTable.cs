@@ -26,38 +26,18 @@ namespace JasonSharp
 			scopes.Peek().Add(name, info);
 		}
 
-        public TVal LookupAs(TKey name)
+        public bool TryLookup(TKey name, out TVal info)
 		{
 			foreach (var scope in scopes)
 			{
-				TVal info;
 				if (scope.TryGetValue(name, out info))
 				{
-					return info;
+					return true;
 				}
 			}
-			
-			throw new ApplicationException(String.Format("`{0}` is not in scope", name));
-		}
-
-        public TResult LookupAs<TResult>(TKey name)
-            where TResult : class, TVal
-		{
-			foreach (var scope in scopes)
-			{
-				TVal info;
-				if (scope.TryGetValue(name, out info))
-				{
-                    var result = info as TResult;
-					if (result != null)
-					{
-						return result;
-					}
-                    throw new ApplicationException(String.Format("`{0}` is {1}, but it's used as {2}", name, typeof(TVal).Name, typeof(TResult).Name));
-				}
-			}
-
-			throw new ApplicationException(String.Format("`{0}` is not in scope", name));
+		    
+            info = default(TVal);
+            return false;
 		}
 	}
 }

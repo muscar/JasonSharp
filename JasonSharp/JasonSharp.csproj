@@ -41,9 +41,6 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="foo">
-      <HintPath>bin\Debug\foo.dll</HintPath>
-    </Reference>
     <Reference Include="Runtime">
       <HintPath>..\Runtime\bin\Debug\Runtime.dll</HintPath>
     </Reference>
