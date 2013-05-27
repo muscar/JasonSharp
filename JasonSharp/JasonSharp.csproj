@@ -63,6 +63,9 @@
     <Compile Include="Frontend\SourceReader.cs" />
     <Compile Include="Backend\TupleUtils.cs" />
     <Compile Include="Frontend\TokenKind.cs" />
+    <Compile Include="Frontend\TokenDescriptionAttribute.cs" />
+    <Compile Include="Frontend\TokenKindExtensions.cs" />
+    <Compile Include="Frontend\Token.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

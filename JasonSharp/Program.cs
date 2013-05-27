@@ -14,9 +14,28 @@ namespace JasonSharp
 //			Console.WriteLine(foo.foo);
 //			return;
 
-            var reader = new SourceReader(new StreamReader(@"../../examples/foo.mj"));
-			var node = new Parser(new Scanner(reader)).Parse();
-            new CodeGenerator("foo").Compile(node);
+            if (args.Length != 1)
+            {
+                Console.WriteLine("Usage: JasonSharp.exe <source>");
+                return;
+            }
+
+            var compilationUnitName = Path.GetFileNameWithoutExtension(args[0]);
+
+            var reader = new SourceReader(new StreamReader(args[0]));
+            var parser = new Parser(new Scanner(reader));
+            var codegen = new CodeGenerator(compilationUnitName);
+
+            parser.ParseError += (sender, e) => Console.WriteLine(e.Message);
+			var node = parser.Parse();
+
+            if (parser.HasErrors)
+            {
+                Console.WriteLine("Errors encountered while parsing");
+                return;
+            }
+
+            codegen.Compile(node);
 		}
 	}
 }

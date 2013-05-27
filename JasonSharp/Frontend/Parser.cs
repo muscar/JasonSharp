@@ -5,11 +5,13 @@ using JasonSharp.Intermediate;
 
 namespace JasonSharp.Frontend
 {
-    public class ParseException : Exception
+    public class ParseErrorEventArgs : EventArgs
     {
-        public ParseException(string message)
-            : base(message)
+        public string Message { get; private set; }
+
+        public ParseErrorEventArgs(string message)
         {
+            Message = message;
         }
     }
 
@@ -17,9 +19,22 @@ namespace JasonSharp.Frontend
     {
         private readonly IEnumerator<Token> tokens;
 
+        public event EventHandler<ParseErrorEventArgs> ParseError;
+
+        public bool HasErrors { get; private set; }
+
         public Parser(Scanner scanner)
         {
             this.tokens = scanner.Scan().GetEnumerator();
+        }
+
+        protected virtual void OnParseError(ParseErrorEventArgs e)
+        {
+            if (ParseError != null)
+            {
+                ParseError(this, e);
+            }
+            HasErrors = true;
         }
 
         // Utils
@@ -28,11 +43,19 @@ namespace JasonSharp.Frontend
         {
             if (tokens.Current.Kind != expected)
             {
-                throw new ParseException(String.Format("{0}: Expecting `{1}`, but got `{2}`", tokens.Current.Span, repr, tokens.Current));
+                var message = String.Format("{0}: Expecting {1}, but got {2}", tokens.Current.Span, expected.GetDescription(), tokens.Current);
+                OnParseError(new ParseErrorEventArgs(message));
             }
             var token = tokens.Current;
             tokens.MoveNext();
             return token;
+        }
+
+        private void SkipWhile(Predicate<Token> pred)
+        {
+            while (pred(tokens.Current) && tokens.MoveNext())
+            {
+            }
         }
 
         private List<T> Sequence<T>(TokenKind sep, Func<T> parser)
@@ -165,7 +188,13 @@ namespace JasonSharp.Frontend
                         return new PlanInvocationNode(term.Item1, term.Item2);
                     }
                 default:
-                    throw new ParseException(String.Format("{0}: Unexpected token `{1}`", tokens.Current.Span, tokens.Current.Contents));
+                    {
+                        var message = String.Format("{0}: Unexpected token: {1}", tokens.Current.Span, tokens.Current);
+                        OnParseError(new ParseErrorEventArgs(message));
+                        SkipWhile(tok => tok.Kind != TokenKind.Semicolon);
+                        tokens.MoveNext();
+                        return null;
+                    }
             }
         }
 
@@ -215,8 +244,14 @@ namespace JasonSharp.Frontend
                 case TokenKind.Number:
                     tokens.MoveNext();
                     return new IdentNode(token.Contents);
+                default:
+                    {
+                        var message = String.Format("{0}: Unexpected token: {1}", tokens.Current.Span, token);
+                        OnParseError(new ParseErrorEventArgs(message));
+                        tokens.MoveNext();
+                        return null;
+                    }
             }
-            throw new ParseException(String.Format("{0}: Unexpected token `{1}`", tokens.Current.Span, token.Contents));
         }
     }
 }

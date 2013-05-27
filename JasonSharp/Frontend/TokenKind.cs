@@ -29,36 +29,62 @@ namespace JasonSharp.Frontend
     public enum TokenKind
     {
         // Basic lexemes
+        [TokenDescription("identifier")]
         Ident,
+        [TokenDescription("number")]
         Number,
         // Keywords
+        [TokenDescription("agent")]
         KwAgent,
+        [TokenDescription("bel")]
         KwBel,
+        [TokenDescription("on")]
         KwOn,
+        [TokenDescription("plan")]
         KwPlan,
+        [TokenDescription("proto")]
         KwProto,
         // Operators
+        [TokenDescription("+")]
         Plus,
+        [TokenDescription("-")]
         Minus,
+        [TokenDescription("-")]
         Mul,
+        [TokenDescription("/")]
         Div,
         // Grouping
+        [TokenDescription("(")]
         LParen,
+        [TokenDescription(")")]
         RParen,
+        [TokenDescription("[")]
         LBracket,
+        [TokenDescription("]")]
         RBracket,
+        [TokenDescription("{")]
         LCurly,
+        [TokenDescription("}")]
         RCurly,
         // Punctuation
+        [TokenDescription(",")]
         Comma,
+        [TokenDescription(".")]
         Period,
+        [TokenDescription(";")]
         Semicolon,
+        [TokenDescription(":")]
         Colon,
+        [TokenDescription("?")]
         QMark,
+        [TokenDescription("!")]
         EMark,
+        [TokenDescription("??")]
         QMark2,
         // Misc
+        [TokenDescription("unknown")]
         Unknown,
+        [TokenDescription("end of file")]
         Eof
     }
     

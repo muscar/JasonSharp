@@ -13,6 +13,7 @@ namespace JasonSharp.Backend
     abstract class SymbolTableEntry
     {
         public abstract void EmitLookup(ILGenerator il);
+        public abstract void EmitStore(ILGenerator il);
     }
 
     class ArgumentEntry : SymbolTableEntry
@@ -45,6 +46,11 @@ namespace JasonSharp.Backend
                     break;
             }
         }
+
+        public override void EmitStore(ILGenerator il)
+        {
+            il.Emit(OpCodes.Starg, Info);
+        }
     }
 
     class LocalEntry : SymbolTableEntry
@@ -59,6 +65,11 @@ namespace JasonSharp.Backend
         public override void EmitLookup(ILGenerator il)
         {
             il.Emit(OpCodes.Ldloc, Info);
+        }
+        
+        public override void EmitStore(ILGenerator il)
+        {
+            il.Emit(OpCodes.Stloc, Info);
         }
     }
 
@@ -76,6 +87,12 @@ namespace JasonSharp.Backend
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldfld, Info);
         }
+        
+        public override void EmitStore(ILGenerator il)
+        {
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Stfld, Info);
+        }
     }
 
     class MethodEntry : SymbolTableEntry
@@ -90,6 +107,11 @@ namespace JasonSharp.Backend
         public override void EmitLookup(ILGenerator il)
         {
             il.Emit(OpCodes.Ldftn, Info);
+        }
+        
+        public override void EmitStore(ILGenerator il)
+        {
+            throw new InvalidOperationException();
         }
     }
 
@@ -156,7 +178,8 @@ namespace JasonSharp.Backend
                 }
 
                 il.EmitTupleCreate(argTypes);
-                il.Emit(OpCodes.Stfld, field.Info);
+//                il.Emit(OpCodes.Stfld, field.Info);
+                field.EmitStore(il);
             }
         }
 

@@ -4,26 +4,7 @@ using System.Collections.Generic;
 using JasonSharp.Text;
 
 namespace JasonSharp.Frontend
-{    
-    public class Token
-    {
-        public TokenKind Kind { get; private set; }
-        public string Contents { get; private set; }
-        public TextSpan Span { get; private set; }
-        
-        public Token(TokenKind kind, string contents, TextSpan span)
-        {
-            Kind = kind;
-            Contents = contents;
-            Span = span;
-        }
-
-        public override string ToString()
-        {
-            return Contents;
-        }
-    }
-
+{
     public class Scanner
     {
         private readonly SourceReader reader;
