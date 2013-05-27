@@ -10,7 +10,7 @@ namespace JasonSharp
 		public static void Main(string[] args)
 		{
 //			var foo = new Test(10, 20);
-//			foo.bar(1);
+//			foo.bar(2);
 //			Console.WriteLine(foo.foo);
 //			return;
 

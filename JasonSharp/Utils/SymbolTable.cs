@@ -3,21 +3,21 @@ using System.Collections.Generic;
 
 namespace JasonSharp
 {
-	public class SymbolTable<T>
+	public class SymbolTable<TKey, TVal>
 	{
-		private readonly Stack<Dictionary<string, T>> scopes = new Stack<Dictionary<string, T>>();
+        private readonly Stack<Dictionary<TKey, TVal>> scopes = new Stack<Dictionary<TKey, TVal>>();
 
-		public void Enter()
+		public void EnterScope()
 		{
-			scopes.Push(new Dictionary<string, T>());
+            scopes.Push(new Dictionary<TKey, TVal>());
 		}
 
-		public void Exit()
+		public void ExitScope()
 		{
 			scopes.Pop();
 		}
 
-		public void Register(string name, T info)
+        public void Register(TKey name, TVal info)
 		{
 			if (scopes.Count == 0)
 			{
@@ -26,11 +26,11 @@ namespace JasonSharp
 			scopes.Peek().Add(name, info);
 		}
 
-		public T Lookup(string name)
+        public TVal LookupAs(TKey name)
 		{
 			foreach (var scope in scopes)
 			{
-				T info;
+				TVal info;
 				if (scope.TryGetValue(name, out info))
 				{
 					return info;
@@ -40,20 +40,20 @@ namespace JasonSharp
 			throw new ApplicationException(String.Format("`{0}` is not in scope", name));
 		}
 
-		public U Lookup<U>(string name)
-			where U : class, T
+        public TResult LookupAs<TResult>(TKey name)
+            where TResult : class, TVal
 		{
 			foreach (var scope in scopes)
 			{
-				T info;
+				TVal info;
 				if (scope.TryGetValue(name, out info))
 				{
-					var result = info as U;
+                    var result = info as TResult;
 					if (result != null)
 					{
 						return result;
 					}
-					throw new ApplicationException(String.Format("`{0}` is {1}, but it's used as {2}", name, typeof(T).Name, typeof(U).Name));
+                    throw new ApplicationException(String.Format("`{0}` is {1}, but it's used as {2}", name, typeof(TVal).Name, typeof(TResult).Name));
 				}
 			}
 

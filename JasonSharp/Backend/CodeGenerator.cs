@@ -89,15 +89,13 @@ namespace JasonSharp.Backend
 
         public override void EmitLookup(ILGenerator il)
         {
-            throw new NotImplementedException();
+            il.Emit(OpCodes.Ldftn, Info);
         }
     }
 
     class CodeGenerator : INodeVisitor
     {
-        private readonly MethodInfo[] tupleCreateMethods = new MethodInfo[8];
-
-        private readonly SymbolTable<SymbolTableEntry> symbolTable = new SymbolTable<SymbolTableEntry>();
+        private readonly SymbolTable<string, SymbolTableEntry> symbolTable = new SymbolTable<string, SymbolTableEntry>();
 
         private readonly AssemblyBuilder assemblyBuilder;
         private readonly ModuleBuilder moduleBuilder;
@@ -122,7 +120,7 @@ namespace JasonSharp.Backend
 
         private void EmitCtor(IList<Tuple<string, string>> args, IEnumerable<BeliefDeclarationNode> beliefDeclarations)
         {
-            symbolTable.Enter();
+            symbolTable.EnterScope();
 
             for (int i = 0; i < args.Count; i++)
             {
@@ -139,12 +137,12 @@ namespace JasonSharp.Backend
 
             il.Emit(OpCodes.Ret);
 
-            symbolTable.Exit();
+            symbolTable.ExitScope();
         }
 
         void EmitBeliefUpdate(string name, IEnumerable<INode> args)
         {
-            var field = symbolTable.Lookup<FieldEntry>(name);
+            var field = symbolTable.LookupAs<FieldEntry>(name);
             if (field != null)
             {
                 il.Emit(OpCodes.Ldarg_0);
@@ -164,7 +162,7 @@ namespace JasonSharp.Backend
             typeBuilder = moduleBuilder.DefineType(node.Name, TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.BeforeFieldInit);
 
             // Agent scope
-            symbolTable.Enter();
+            symbolTable.EnterScope();
 
             foreach (var b in node.BeliefDeclarations)
             {
@@ -189,7 +187,7 @@ namespace JasonSharp.Backend
 //
 //			il.Emit(OpCodes.Ret);
 
-            symbolTable.Exit();
+            symbolTable.ExitScope();
         }
 
         public void Visit(BeliefDeclarationNode node)
@@ -210,7 +208,7 @@ namespace JasonSharp.Backend
             methodBuilder = typeBuilder.DefineMethod(node.Name, MethodAttributes.Public | MethodAttributes.HideBySig, typeof(void), argTypes);
             il = methodBuilder.GetILGenerator();
 
-            symbolTable.Enter();
+            symbolTable.EnterScope();
 
             var args = node.Args;
             for (int i = 0; i < args.Count; i++)
@@ -225,7 +223,7 @@ namespace JasonSharp.Backend
 
             il.Emit(OpCodes.Ret);
 			
-            symbolTable.Exit();
+            symbolTable.ExitScope();
 
             symbolTable.Register(node.Name, new MethodEntry(methodBuilder));
         }
@@ -237,13 +235,13 @@ namespace JasonSharp.Backend
             {
                 arg.Accept(this);
             }
-            var method = symbolTable.Lookup<MethodEntry>(node.Name);
+            var method = symbolTable.LookupAs<MethodEntry>(node.Name);
             il.Emit(OpCodes.Call, method.Info);
         }
 
         public void Visit(BeliefQueryNode node)
         {
-            var field = symbolTable.Lookup<FieldEntry>(node.Name);
+            var field = symbolTable.LookupAs<FieldEntry>(node.Name);
             var args = node.Args;
             var argTypes = args.Select(a => typeof(int)).ToArray();
 
@@ -288,7 +286,7 @@ namespace JasonSharp.Backend
 
         public void Visit(IdentNode node)
         {
-            var info = symbolTable.Lookup(node.Name);
+            var info = symbolTable.LookupAs(node.Name);
             info.EmitLookup(il);
         }
 

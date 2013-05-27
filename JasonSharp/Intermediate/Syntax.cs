@@ -78,49 +78,49 @@ namespace JasonSharp.Intermediate
 		}
 	}
     
-	public class HandlerDeclarationNode : INode
+    public abstract class ProceduralAbstractionNode
+    {
+        private readonly List<Tuple<string, string>> args;
+        private readonly List<INode> body;
+
+        public string Name { get; private set; }
+
+        public ReadOnlyCollection<Tuple<string, string>> Args
+        {
+            get { return args.AsReadOnly(); }
+        }
+
+        public ReadOnlyCollection<INode> Body
+        {
+            get { return body.AsReadOnly(); }
+        }
+
+        public ProceduralAbstractionNode(string name, List<Tuple<string, string>> args, List<INode> body)
+        {
+            this.Name = name;
+            this.args = args;
+            this.body = body;
+        }
+    }
+
+    public class HandlerDeclarationNode : ProceduralAbstractionNode, INode
+    {
+        public HandlerDeclarationNode(string name, List<Tuple<string, string>> args, List<INode> body)
+            : base(name, args, body)
+        {
+        }
+
+        public void Accept(INodeVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class PlanDeclarationNode : ProceduralAbstractionNode, INode
 	{
-		private readonly ReadOnlyCollection<INode> body;
-
-		public readonly string Name;
-		public IList<INode> Body
+		public PlanDeclarationNode(string name, List<Tuple<string, string>> args, List<INode> body)
+            : base(name, args, body)
 		{
-			get { return body; }
-		}
-        
-		public HandlerDeclarationNode(string name, IList<INode> body)
-		{
-			this.Name = name;
-			this.body = new ReadOnlyCollection<INode>(body);
-		}
-
-		public void Accept(INodeVisitor visitor)
-		{
-			visitor.Visit(this);
-		}
-	}
-
-	public class PlanDeclarationNode : INode
-	{
-		private readonly ReadOnlyCollection<Tuple<string, string>> args;
-		private readonly ReadOnlyCollection<INode> body;
-
-		public readonly string Name;
-		public IList<Tuple<string, string>> Args
-		{
-			get { return args; }
-		}
-        
-		public IList<INode> Body
-		{
-			get { return body; }
-		}
-		
-		public PlanDeclarationNode(string name, IList<Tuple<string, string>> args, IList<INode> body)
-		{
-			this.Name = name;
-			this.args = new ReadOnlyCollection<Tuple<string, string>>(args);
-			this.body = new ReadOnlyCollection<INode>(body);
 		}
 
 		public void Accept(INodeVisitor visitor)
