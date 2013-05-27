@@ -84,9 +84,9 @@ namespace Runtime
         {
             lock (valueLock)
             {
-                while (!full)
+                if (!full)
                 {
-                    Monitor.Wait(valueLock);
+                    return default(T);
                 }
                 return value;
             }
